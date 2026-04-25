@@ -283,12 +283,12 @@ import networkx as nx
 G = nx.watts_strogatz_graph(N, k=avg_degree, p=rewire_prob)
 G = nx.DiGraph(G)   # m6: convert to directed. Each undirected edge becomes two directed edges.
 ```
-Default params: `N=200` for demo runs, `N=1000` for experiment runs, `avg_degree=15`, `rewire_prob=0.1`
+Default params: `N=200` for demo runs, `N=1000` for experiment runs, `avg_degree=16`, `rewire_prob=0.1`
 
 > **m6 — Directed graph: performance and resource implications.**
 >
-> *Memory:* `nx.DiGraph` stores both directions per edge. At N=1000, avg_degree=15 this is
-> ~30k directed edges vs ~15k undirected — roughly 2× edge memory. Negligible at this scale.
+> *Memory:* `nx.DiGraph` stores both directions per edge. At N=1000, avg_degree=16 this is
+> ~32k directed edges vs ~16k undirected — roughly 2× edge memory. Negligible at this scale.
 >
 > *Speed:* All neighbor iteration now uses `G.predecessors(i)` (who do I listen to?) vs
 > `G.successors(i)` (who do I broadcast to?). Make this convention explicit everywhere in
@@ -480,7 +480,7 @@ a list of metric snapshots and the final agent state.
 ```python
 {
     "N": 200,
-    "avg_degree": 15,
+    "avg_degree": 16,
     "rewire_prob": 0.1,
     "T": 200,               # m3: reduced for MVP demos; full default is 720 (Appendix B / ref doc Part 8)
     "snapshot_interval": 6,   # m2: Appendix B default is authoritative (6). REF Part 8 range: 1–6.
@@ -1889,7 +1889,7 @@ Introduce a `Platform` class:
 @dataclass
 class Platform:
     id: int
-    graph: nx.Graph
+    graph: nx.DiGraph
     agents: list[Agent]        # agents on this platform
     recommender: BaseRecommender
     alpha: float
@@ -1993,7 +1993,7 @@ All defaults from the canonical agent reference document. Do not change these wi
 ```python
 # Network
 N = 1000                  # agents (use 200 for demos, 1000 for experiments)
-avg_degree = 15
+avg_degree = 16
 rewire_prob = 0.1          # Watts-Strogatz p
 homophily_threshold = 0.3
 dynamic_rewire_rate = 0.01
