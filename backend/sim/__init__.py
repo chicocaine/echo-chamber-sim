@@ -9,6 +9,7 @@ from .network import (
 	get_predecessors,
 	get_successors,
 )
+from .metrics import compute_all_metrics
 from .recommender import generate_feed
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
 	"build_network",
 	"create_agent",
 	"generate_content_item",
+	"compute_all_metrics",
 	"get_graph_snapshot",
 	"get_influence_weights",
 	"get_predecessors",
