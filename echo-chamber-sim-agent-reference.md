@@ -397,7 +397,7 @@ This is the complete parameter list. If you are uncertain about a value, use the
 | Parameter | Symbol | Range | Default | Effect |
 |---|---|---|---|---|
 | Network size | N | 100–1,000,000 | 1000 | Larger = more realistic; slower to run |
-| Average degree | d_avg | 5–50 | 15 | Higher = more connected; faster consensus |
+| Average degree | d_avg | 5–50 | 16 | Higher = more connected; faster consensus |
 | Rewiring probability | p | 0–1 | 0.1 | Watts–Strogatz; higher = more random |
 | Homophily threshold | h | 0–1 | 0.3 | Lower = ties only between very similar agents |
 | Dynamic rewire rate | r_dyn | 0–1 | 0.01 | Per-tick edge-change probability |
@@ -563,7 +563,7 @@ Likely causes, in order of likelihood: (1) high `β` transmission rate, (2) Bot 
 Check: (1) Is `ε` (confidence bound) too high? Agents may still listen to everyone. (2) Is `α` (personalization) near 0? The recommender may be injecting diversity. (3) Are there enough Flexible/DeGroot agents? They converge to consensus rather than clustering. (4) Is the network too sparse? Low degree = weak social influence per agent.
 
 **"What's a realistic baseline run configuration?"**
-N = 1000, d_avg = 15, Watts–Strogatz with p = 0.1, mixed agent population (60% Stubborn, 20% Flexible, 10% Passive, 5% Zealot, 5% Bot), ε = 0.3, α = 0.65, g_i ~ U(0.1, 0.3), T = 720 ticks, 10 Monte Carlo replicates.
+N = 1000, d_avg = 16, Watts–Strogatz with p = 0.1, mixed agent population (60% Stubborn, 20% Flexible, 10% Passive, 5% Zealot, 5% Bot), ε = 0.3, α = 0.65, g_i ~ U(0.1, 0.3), T = 720 ticks, 10 Monte Carlo replicates.
 
 **"What parameters have the biggest effect on polarization?"**
 In roughly descending order of impact: `homophily_threshold`, `α` (personalization), `ε` (confidence bound), `stubbornness g_i`, fraction of Zealot/Bot agents, `β` (misinformation transmission rate).
