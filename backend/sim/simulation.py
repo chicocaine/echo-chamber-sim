@@ -1,20 +1,27 @@
-"""Simulation baseline harness for MVP Step 1b profiling.
+"""Main simulation loop for MVP Step 7.
 
-This file provides a profiling target before optimization work begins.
-It will be replaced with full simulation logic in MVP Steps 2-7.
+Implements the nine-step tick loop in the exact order defined by the
+implementation plan, with explicit stubs for future phases.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict
 import random
-from statistics import fmean
-from time import perf_counter
+from typing import Any
 
-try:
-    from sim.recommender import CandidateContent, generate_feed
-except ModuleNotFoundError:
-    from recommender import CandidateContent, generate_feed
+import numpy as np
+
+from .agent import Agent, initialize_agents
+from .content import Content, maybe_generate_content
+from .metrics import compute_all_metrics
+from .network import (
+    build_network,
+    get_graph_snapshot,
+    get_influence_weights,
+    get_predecessors,
+)
+from .recommender import generate_feed
 
 
 try:
@@ -32,101 +39,267 @@ except NameError:
 # Baseline command: `kernprof -l sim/simulation.py`
 
 
-@dataclass(slots=True)
-class _AgentState:
-    """Minimal internal agent state used for Step 1b profiling."""
+BASE_SHARE_PROB = 0.18
 
-    id: int
-    opinion: float
+DEFAULT_CONFIG: dict[str, Any] = {
+    "N": 200,
+    "avg_degree": 15,
+    "rewire_prob": 0.1,
+    "T": 200,
+    "snapshot_interval": 6,
+    "alpha": 0.65,
+    "beta_pop": 0.2,
+    "k_exp": 20,
+    "agent_mix": {
+        "stubborn": 0.60,
+        "flexible": 0.20,
+        "zealot": 0.15,
+        "bot": 0.05,
+    },
+    "sir_beta": 0.3,
+    "sir_gamma": 0.05,
+    "initial_opinion_distribution": "uniform",
+    "seed": 42,
+}
 
 
-def _clamp_opinion(value: float) -> float:
-    """Clamp an opinion value to the simulation invariant range [-1.0, 1.0]."""
-    return max(-1.0, min(1.0, value))
+def _assert_probability(name: str, value: float) -> None:
+    """Validate probability values against [0, 1]."""
+    if not 0.0 <= value <= 1.0:
+        raise ValueError(f"{name} must be in [0, 1], got {value}")
 
 
-def _build_candidate_pool(size: int, rng: random.Random) -> list[CandidateContent]:
-    """Create synthetic content pool for baseline feed-scoring load."""
-    return [
-        CandidateContent(
-            ideological_score=rng.uniform(-1.0, 1.0),
-            virality=rng.uniform(0.0, 1.0),
-        )
-        for _ in range(size)
-    ]
+def _validate_config(config: dict[str, Any]) -> None:
+    """Validate simulation configuration constraints for MVP Step 7."""
+    required_keys = {
+        "N",
+        "avg_degree",
+        "rewire_prob",
+        "T",
+        "snapshot_interval",
+        "alpha",
+        "beta_pop",
+        "k_exp",
+        "agent_mix",
+        "sir_beta",
+        "sir_gamma",
+        "initial_opinion_distribution",
+        "seed",
+    }
+    missing = required_keys.difference(config.keys())
+    if missing:
+        raise ValueError(f"Missing required config keys: {sorted(missing)}")
+
+    if int(config["N"]) <= 0:
+        raise ValueError("N must be > 0")
+    if int(config["T"]) <= 0:
+        raise ValueError("T must be > 0")
+    if int(config["snapshot_interval"]) <= 0:
+        raise ValueError("snapshot_interval must be > 0")
+    if int(config["k_exp"]) <= 0:
+        raise ValueError("k_exp must be > 0")
+    if int(config["avg_degree"]) <= 0:
+        raise ValueError("avg_degree must be > 0")
+
+    _assert_probability("rewire_prob", float(config["rewire_prob"]))
+    _assert_probability("alpha", float(config["alpha"]))
+    _assert_probability("beta_pop", float(config["beta_pop"]))
+    _assert_probability("sir_beta", float(config["sir_beta"]))
+    _assert_probability("sir_gamma", float(config["sir_gamma"]))
+
+    if float(config["beta_pop"]) > 1.0:
+        raise ValueError("beta_pop must be <= 1.0")
+
+
+def _serialize_agents(agents: list[Agent]) -> list[dict[str, Any]]:
+    """Convert agent dataclasses into JSON-serializable dict objects."""
+    serialized: list[dict[str, Any]] = []
+    for agent in agents:
+        payload = asdict(agent)
+        payload["opinion"] = float(agent.opinion)
+        payload["initial_opinion"] = float(agent.initial_opinion)
+        payload["opinion_history"] = [float(value) for value in agent.opinion_history]
+        serialized.append(payload)
+    return serialized
+
+
+def _network_rewiring_step() -> None:
+    """Placeholder for Phase 4 rewiring logic."""
+    # STUB: Phase 4 — Network rewiring step
+    # See implementation plan Phase 4, Step 4.1 for full implementation.
+    pass
+
+
+def _churn_step() -> None:
+    """Placeholder for Phase 4 churn logic."""
+    # STUB: Phase 4 — Churn step
+    # See implementation plan Phase 4, Step 4.2 for full implementation.
+    pass
+
+
+def _bot_detection_step() -> None:
+    """Placeholder for Phase 5 bot detection logic."""
+    # STUB: Phase 5 — Bot detection step
+    # See implementation plan Phase 5, Step 5.4 for full implementation.
+    pass
 
 
 @profile
 def run_simulation(
-    N: int = 1000,
-    T: int = 100,
-    k_exp: int = 20,
-    alpha: float = 0.65,
-    beta_pop: float = 0.2,
-    candidate_pool_size: int = 500,
-    seed: int = 42,
-) -> dict[str, float | int]:
-    """Run a baseline loop to profile feed generation and opinion update load.
+    config: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Run the MVP simulation loop and return final outputs.
 
-    Returns summary timings so the same script can be used with or without
-    line_profiler.
+    Tick order (must remain exact):
+    1. Content generation
+    2. Feed generation
+    3. Content consumption
+    4. Sharing decision
+    5. Opinion update + SIR transitions
+    6. Network rewiring (stub in MVP)
+    7. Churn check (stub in MVP)
+    8. Bot detection (stub in MVP)
+    9. Metric logging
     """
-    if N <= 0 or T <= 0:
-        raise ValueError("N and T must be positive integers")
-    if not 0.0 <= alpha <= 1.0:
-        raise ValueError("alpha must be in [0, 1]")
-    if not 0.0 <= beta_pop <= 1.0:
-        raise ValueError("beta_pop must be in [0, 1]")
+    merged_config: dict[str, Any] = {**DEFAULT_CONFIG, **(config or {})}
+    _validate_config(merged_config)
 
-    rng = random.Random(seed)
-    agents = [_AgentState(id=i, opinion=rng.uniform(-1.0, 1.0)) for i in range(N)]
+    rng = np.random.default_rng(int(merged_config["seed"]))
+    py_rng = random.Random(int(merged_config["seed"]))
 
-    feed_seconds = 0.0
-    opinion_seconds = 0.0
-    total_start = perf_counter()
+    agents = initialize_agents(
+        n_agents=int(merged_config["N"]),
+        agent_mix=dict(merged_config["agent_mix"]),
+        seed=int(merged_config["seed"]),
+        initial_opinion_distribution=str(merged_config["initial_opinion_distribution"]),
+    )
+    G = build_network(
+        agents=agents,
+        avg_degree=int(merged_config["avg_degree"]),
+        rewire_prob=float(merged_config["rewire_prob"]),
+        seed=int(merged_config["seed"]),
+    )
 
-    for _tick in range(T):
-        candidate_pool = _build_candidate_pool(candidate_pool_size, rng)
+    content_id_counter = 0
+    previous_shared_content: dict[int, list[Content]] = {}
+    snapshots: list[dict[str, Any]] = []
 
-        feed_start = perf_counter()
-        feeds: dict[int, list[CandidateContent]] = {
-            agent.id: generate_feed(
+    total_ticks = int(merged_config["T"])
+    snapshot_interval = int(merged_config["snapshot_interval"])
+    k_exp = int(merged_config["k_exp"])
+    alpha = float(merged_config["alpha"])
+    beta_pop = float(merged_config["beta_pop"])
+    sir_beta = float(merged_config["sir_beta"])
+    sir_gamma = float(merged_config["sir_gamma"])
+
+    for tick in range(total_ticks):
+        active_agents = [agent for agent in agents if agent.is_active]
+
+        # Step 1: CONTENT GENERATION
+        current_tick_pool: list[Content] = []
+        for agent in active_agents:
+            maybe_content = maybe_generate_content(
+                agent=agent,
+                content_id=content_id_counter,
+                timestamp=tick,
+                rng=rng,
+            )
+            if maybe_content is not None:
+                current_tick_pool.append(maybe_content)
+                content_id_counter += 1
+
+        # Step 2: FEED GENERATION
+        feeds: dict[int, list[Content]] = {}
+        for agent in active_agents:
+            predecessor_ids = get_predecessors(G, agent.id)
+            candidate_pool: list[Content] = list(current_tick_pool)
+            for predecessor_id in predecessor_ids:
+                candidate_pool.extend(previous_shared_content.get(predecessor_id, []))
+
+            feeds[agent.id] = generate_feed(
                 agent=agent,
                 candidate_pool=candidate_pool,
                 k_exp=k_exp,
                 alpha=alpha,
                 beta_pop=beta_pop,
             )
-            for agent in agents
-        }
-        feed_seconds += perf_counter() - feed_start
 
-        update_start = perf_counter()
+        # Step 3: CONTENT CONSUMPTION
+        consumed_items: dict[int, list[Content]] = {}
+        for agent in active_agents:
+            consumed = feeds.get(agent.id, [])
+            consumed_items[agent.id] = consumed
+            # STUB: Phase 2 — Emotion update at consumption time.
+            # See implementation plan Phase 2, Step 2.1 for full implementation.
+            agent.emotional_arousal = 0.0
+
+        # Step 4: SHARING DECISION
+        shared_content: dict[int, list[Content]] = {}
+        for agent in active_agents:
+            shared: list[Content] = []
+            for content in consumed_items.get(agent.id, []):
+                # STUB: Phase 2 — Sigmoid sharing probability using arousal/valence.
+                # See implementation plan Phase 2, Step 2.2 for full implementation.
+                if py_rng.random() < BASE_SHARE_PROB:
+                    shared.append(content)
+            shared_content[agent.id] = shared
+
+        # Step 5: OPINION UPDATE
         new_opinions: dict[int, float] = {}
-        for agent in agents:
-            feed = feeds[agent.id]
-            if not feed:
-                new_opinions[agent.id] = agent.opinion
-                continue
+        for agent in active_agents:
+            predecessor_ids = get_predecessors(G, agent.id)
+            neighbors = [G.nodes[node_id]["agent"] for node_id in predecessor_ids]
+            weights = get_influence_weights(G, agent.id)
+            new_opinions[agent.id] = agent.compute_update(neighbors, weights)
 
-            neighbor_pressure = fmean(content.ideological_score for content in feed)
-            updated = 0.2 * agent.opinion + 0.8 * neighbor_pressure
-            new_opinions[agent.id] = _clamp_opinion(updated)
+        # Apply simultaneously to avoid order bias.
+        for agent in active_agents:
+            agent.opinion = float(new_opinions.get(agent.id, agent.opinion))
 
-        for agent in agents:
-            agent.opinion = new_opinions[agent.id]
-        opinion_seconds += perf_counter() - update_start
+        # SIR transitions (triggered by misinformation in consumed feed).
+        for agent in active_agents:
+            if agent.sir_state == "S":
+                saw_misinfo = any(content.is_misinformation for content in consumed_items.get(agent.id, []))
+                if saw_misinfo and py_rng.random() < sir_beta:
+                    agent.sir_state = "I"
+            elif agent.sir_state == "I":
+                if py_rng.random() < sir_gamma:
+                    agent.sir_state = "R"
 
-    total_seconds = perf_counter() - total_start
+        # Step 6: NETWORK REWIRING (MVP stub)
+        _network_rewiring_step()
+
+        # Step 7: CHURN CHECK (MVP stub)
+        _churn_step()
+
+        # Step 8: BOT DETECTION (MVP stub)
+        _bot_detection_step()
+
+        # Step 9: METRIC LOGGING
+        if tick % snapshot_interval == 0:
+            snapshots.append(compute_all_metrics(G, agents, tick=tick))
+
+        # Required for later bot-detection signal calculations.
+        for agent in active_agents:
+            agent.opinion_history.append(float(agent.opinion))
+
+        previous_shared_content = shared_content
+
+    final_graph = get_graph_snapshot(G)
     return {
-        "N": N,
-        "T": T,
-        "total_seconds": round(total_seconds, 6),
-        "feed_seconds": round(feed_seconds, 6),
-        "opinion_update_seconds": round(opinion_seconds, 6),
+        "config": merged_config,
+        "snapshots": snapshots,
+        "final_agents": _serialize_agents(agents),
+        "final_graph": final_graph,
     }
 
 
 if __name__ == "__main__":
-    summary = run_simulation()
-    print(summary)
+    result = run_simulation()
+    print(
+        {
+            "snapshot_count": len(result["snapshots"]),
+            "agent_count": len(result["final_agents"]),
+            "edge_count": len(result["final_graph"]["edges"]),
+        }
+    )

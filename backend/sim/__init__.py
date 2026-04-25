@@ -11,6 +11,7 @@ from .network import (
 )
 from .metrics import compute_all_metrics
 from .recommender import generate_feed
+from .simulation import run_simulation
 
 __all__ = [
 	"Agent",
@@ -28,5 +29,6 @@ __all__ = [
 	"generate_feed",
 	"initialize_agents",
 	"maybe_generate_content",
+	"run_simulation",
 ]
 
