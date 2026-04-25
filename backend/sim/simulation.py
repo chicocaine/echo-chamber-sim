@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 import random
+from statistics import fmean
 from typing import Any
 
 import numpy as np
@@ -40,6 +41,7 @@ except NameError:
 
 
 BASE_SHARE_PROB = 0.18
+FEED_INFLUENCE_MAX = 0.15
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "N": 200,
@@ -121,6 +123,11 @@ def _serialize_agents(agents: list[Agent]) -> list[dict[str, Any]]:
         payload["opinion_history"] = [float(value) for value in agent.opinion_history]
         serialized.append(payload)
     return serialized
+
+
+def _clamp_opinion(value: float) -> float:
+    """Clamp opinions to invariant range [-1.0, 1.0]."""
+    return float(max(-1.0, min(1.0, value)))
 
 
 def _network_rewiring_step() -> None:
@@ -250,7 +257,20 @@ def run_simulation(
             predecessor_ids = get_predecessors(G, agent.id)
             neighbors = [G.nodes[node_id]["agent"] for node_id in predecessor_ids]
             weights = get_influence_weights(G, agent.id)
-            new_opinions[agent.id] = agent.compute_update(neighbors, weights)
+
+            social_update = float(agent.compute_update(neighbors, weights))
+            feed = consumed_items.get(agent.id, [])
+
+            if agent.stubbornness >= 1.0 or not feed:
+                new_opinions[agent.id] = social_update
+                continue
+
+            # Recommender-mediated exposure effect: feed ideology nudges opinion
+            # while preserving the primary social update dynamics.
+            feed_mean_ideology = fmean(content.ideological_score for content in feed)
+            feed_weight = FEED_INFLUENCE_MAX * float(agent.susceptibility)
+            blended = (1.0 - feed_weight) * social_update + feed_weight * float(feed_mean_ideology)
+            new_opinions[agent.id] = _clamp_opinion(blended)
 
         # Apply simultaneously to avoid order bias.
         for agent in active_agents:
