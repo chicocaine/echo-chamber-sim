@@ -9,6 +9,7 @@ from .network import (
 	get_predecessors,
 	get_successors,
 )
+from .recommender import generate_feed
 
 __all__ = [
 	"Agent",
@@ -22,6 +23,7 @@ __all__ = [
 	"get_influence_weights",
 	"get_predecessors",
 	"get_successors",
+	"generate_feed",
 	"initialize_agents",
 	"maybe_generate_content",
 ]

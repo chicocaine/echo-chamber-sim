@@ -1,7 +1,7 @@
-"""Recommender baseline module for MVP Step 1b profiling.
+"""Content-based recommender for MVP Step 5.
 
-This module intentionally uses a naive Python-loop scoring approach so the
-line profiler can capture baseline runtime hotspots before optimization phases.
+This module implements the MVP scoring contract used to rank candidate content
+for each agent feed.
 """
 
 from __future__ import annotations
@@ -27,14 +27,19 @@ class AgentLike(Protocol):
 
 @dataclass(slots=True)
 class CandidateContent:
-    """Minimal content shape required for profiling feed generation."""
+    """Minimal content shape used by the recommender and profiling harness."""
 
     ideological_score: float
     virality: float
 
 
 def _score(content: CandidateContent, agent: AgentLike, alpha: float, beta_pop: float) -> float:
-    """Compute MVP feed score per implementation plan Step 5 formula."""
+    """Compute feed score with distinct personalization and popularity terms.
+
+    MVP Step 5 formula:
+        score = alpha * (1 - abs(content.ideological_score - agent.opinion))
+                + (1 - alpha) * beta_pop * log1p(content.virality * 9)
+    """
     ideological_similarity = 1.0 - abs(content.ideological_score - agent.opinion)
     popularity_component = beta_pop * math.log1p(content.virality * 9.0)
     return alpha * ideological_similarity + (1.0 - alpha) * popularity_component
@@ -48,7 +53,11 @@ def generate_feed(
     alpha: float,
     beta_pop: float = 0.2,
 ) -> list[CandidateContent]:
-    """Return top-k scored content with score normalization to [0, 1]."""
+    """Rank candidate content and return the top-k feed for an agent.
+
+    Scores are normalized to [0, 1] by dividing by the maximum score in the
+    candidate pool before ranking, as required by MVP Step 5.
+    """
     if not candidate_pool or k_exp <= 0:
         return []
 
@@ -67,3 +76,6 @@ def generate_feed(
 
     scored.sort(key=lambda item: item[0], reverse=True)
     return [content for _, content in scored[:k_exp]]
+
+
+__all__ = ["CandidateContent", "generate_feed"]
