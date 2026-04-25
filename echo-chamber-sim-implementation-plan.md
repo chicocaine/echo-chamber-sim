@@ -595,7 +595,7 @@ sigmoid formula. Keep these as clearly labeled stubs so Phase implementations ar
 ```python
 class SimConfig(BaseModel):
     N: int = 200             # m7: demo default; use N=1000 for experiment runs (ref doc Part 11 baseline)
-    avg_degree: int = 15
+    avg_degree: int = 16
     rewire_prob: float = 0.1
     T: int = 200             # m3: reduced for MVP demos; full default is 720 (Appendix B / ref doc Part 8)
     snapshot_interval: int = 6   # m2: Appendix B default; REF Part 8 range 1–6

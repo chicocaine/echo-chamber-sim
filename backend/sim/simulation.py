@@ -43,7 +43,7 @@ BASE_SHARE_PROB = 0.18
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "N": 200,
-    "avg_degree": 15,
+    "avg_degree": 16,
     "rewire_prob": 0.1,
     "T": 200,
     "snapshot_interval": 6,

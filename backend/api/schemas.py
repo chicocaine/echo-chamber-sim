@@ -11,7 +11,7 @@ class SimConfig(BaseModel):
     """Configuration payload for running a simulation."""
 
     N: int = 200
-    avg_degree: int = 15
+    avg_degree: int = 16
     rewire_prob: float = 0.1
     T: int = 200
     snapshot_interval: int = 6
