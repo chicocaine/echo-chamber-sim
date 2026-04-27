@@ -40,13 +40,14 @@ except NameError:
 # opinion_update: 2.1% of total time (~3.36s)
 # Baseline command: `kernprof -l sim/simulation.py`
 # PERF OPT (update after each optimization pass):
-# run_simulation N=200 T=200: 5.80s (local benchmark)
-# run_simulation N=1000 T=100: 26.24s (local benchmark)
+# run_simulation N=200 T=200: 4.44s (local benchmark)
+# run_simulation N=1000 T=100: 22.47s (local benchmark)
+# run_simulation N=1000 T=720: 175.71s (~2.93 min, local benchmark)
 # profile command: `kernprof -l -m sim.simulation`
 
 
 BASE_SHARE_PROB = 0.18
-FEED_INFLUENCE_MAX = 0.15
+FEED_INFLUENCE_MAX = 0.35
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "N": 200,
@@ -80,6 +81,7 @@ def _process_agent_tick(
     feed: list[Content],
     neighbors: list[Agent],
     weights: dict[int, float],
+    alpha: float,
     random_seed: int,
 ) -> tuple[int, float, float, list[Content]]:
     """Process Step 3/4/5 for one agent without shared-state mutation."""
@@ -98,8 +100,16 @@ def _process_agent_tick(
         return (agent.id, social_update, new_arousal, shared)
 
     feed_mean_ideology = fmean(content.ideological_score for content in feed)
-    feed_weight = FEED_INFLUENCE_MAX * float(agent.susceptibility)
-    blended = (1.0 - feed_weight) * social_update + feed_weight * float(feed_mean_ideology)
+    # Higher personalization should amplify homophily feedback from the feed.
+    susceptibility = float(agent.susceptibility)
+    feed_weight = FEED_INFLUENCE_MAX * float(alpha) * susceptibility
+    neutralizing_weight = FEED_INFLUENCE_MAX * (1.0 - float(alpha)) * susceptibility
+    total_weight = feed_weight + neutralizing_weight
+    blended = (
+        (1.0 - total_weight) * social_update
+        + feed_weight * float(feed_mean_ideology)
+        + neutralizing_weight * 0.0
+    )
     return (agent.id, _clamp_opinion(blended), new_arousal, shared)
 
 
@@ -230,6 +240,19 @@ def run_simulation(
     previous_shared_content: dict[int, list[Content]] = {}
     snapshots: list[dict[str, Any]] = []
 
+    # MVP network is static (rewiring/churn are stubs), so cache predecessor-derived
+    # structures once instead of rebuilding them for every agent every tick.
+    predecessor_ids_by_agent: dict[int, list[int]] = {
+        agent.id: get_predecessors(G, agent.id) for agent in agents
+    }
+    neighbors_by_agent: dict[int, list[Agent]] = {
+        agent.id: [G.nodes[node_id]["agent"] for node_id in predecessor_ids_by_agent[agent.id]]
+        for agent in agents
+    }
+    influence_weights_by_agent: dict[int, dict[int, float]] = {
+        agent.id: get_influence_weights(G, agent.id) for agent in agents
+    }
+
     total_ticks = int(merged_config["T"])
     snapshot_interval = int(merged_config["snapshot_interval"])
     k_exp = int(merged_config["k_exp"])
@@ -255,26 +278,26 @@ def run_simulation(
                 content_id_counter += 1
 
         # Step 2: FEED GENERATION
-        feeds: dict[int, list[Content]] = {}
-        for agent in active_agents:
-            predecessor_ids = get_predecessors(G, agent.id)
+        def _generate_agent_feed(agent: Agent) -> tuple[int, list[Content]]:
+            predecessor_ids = predecessor_ids_by_agent[agent.id]
             candidate_pool: list[Content] = list(current_tick_pool)
             for predecessor_id in predecessor_ids:
                 candidate_pool.extend(previous_shared_content.get(predecessor_id, []))
-            if candidate_pool:
-                content_ideo_array = np.array(
-                    [content.ideological_score for content in candidate_pool],
-                    dtype=np.float64,
-                )
-                content_virality_array = np.array(
-                    [content.virality for content in candidate_pool],
-                    dtype=np.float64,
-                )
-            else:
-                content_ideo_array = np.array([], dtype=np.float64)
-                content_virality_array = np.array([], dtype=np.float64)
 
-            feeds[agent.id] = generate_feed_vectorized(
+            if not candidate_pool:
+                return (agent.id, [])
+
+            content_ideo_array = np.fromiter(
+                (content.ideological_score for content in candidate_pool),
+                dtype=np.float64,
+                count=len(candidate_pool),
+            )
+            content_virality_array = np.fromiter(
+                (content.virality for content in candidate_pool),
+                dtype=np.float64,
+                count=len(candidate_pool),
+            )
+            feed = generate_feed_vectorized(
                 agent=agent,
                 candidate_pool=candidate_pool,
                 content_ideo_array=content_ideo_array,
@@ -283,6 +306,10 @@ def run_simulation(
                 alpha=alpha,
                 beta_pop=beta_pop,
             )
+            return (agent.id, feed)
+
+        feed_pairs = [_generate_agent_feed(agent) for agent in active_agents]
+        feeds: dict[int, list[Content]] = dict(feed_pairs)
 
         # Step 3/4/5: compute per-agent outcomes, then synchronized apply.
         # For smaller populations, serial execution avoids joblib scheduling overhead.
@@ -291,8 +318,9 @@ def run_simulation(
                 _process_agent_tick(
                     agent=agent,
                     feed=feeds.get(agent.id, []),
-                    neighbors=[G.nodes[node_id]["agent"] for node_id in get_predecessors(G, agent.id)],
-                    weights=get_influence_weights(G, agent.id),
+                    neighbors=neighbors_by_agent[agent.id],
+                    weights=influence_weights_by_agent[agent.id],
+                    alpha=alpha,
                     random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
                 )
                 for agent in active_agents
@@ -302,8 +330,9 @@ def run_simulation(
                 delayed(_process_agent_tick)(
                     agent=agent,
                     feed=feeds.get(agent.id, []),
-                    neighbors=[G.nodes[node_id]["agent"] for node_id in get_predecessors(G, agent.id)],
-                    weights=get_influence_weights(G, agent.id),
+                    neighbors=neighbors_by_agent[agent.id],
+                    weights=influence_weights_by_agent[agent.id],
+                    alpha=alpha,
                     random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
                 )
                 for agent in active_agents
@@ -328,8 +357,18 @@ def run_simulation(
         # SIR transitions (triggered by misinformation in consumed feed).
         for agent in active_agents:
             if agent.sir_state == "S":
-                saw_misinfo = any(content.is_misinformation for content in consumed_items.get(agent.id, []))
-                if saw_misinfo and py_rng.random() < sir_beta:
+                feed = consumed_items.get(agent.id, [])
+                if not feed:
+                    continue
+                misinfo_count = sum(1 for content in feed if content.is_misinformation)
+                if misinfo_count <= 0:
+                    continue
+
+                # Exposure-scaled infection risk avoids immediate saturation at tick 0
+                # while preserving higher risk under heavier misinformation exposure.
+                misinfo_fraction = misinfo_count / max(1, len(feed))
+                infection_prob = sir_beta * misinfo_fraction
+                if py_rng.random() < infection_prob:
                     agent.sir_state = "I"
             elif agent.sir_state == "I":
                 if py_rng.random() < sir_gamma:
