@@ -29,11 +29,17 @@ app.add_middleware(
 async def run_endpoint(config: SimConfig) -> Response:
     """Run a simulation synchronously and return the full result payload."""
     result = run_simulation(config.model_dump())
-    return Response(content=orjson.dumps(result), media_type="application/json")
+    return Response(
+        content=orjson.dumps(result, option=orjson.OPT_NON_STR_KEYS),
+        media_type="application/json",
+    )
 
 
 @app.get("/defaults")
 async def defaults_endpoint() -> Response:
     """Return default simulation configuration values."""
     defaults = SimConfig().model_dump()
-    return Response(content=orjson.dumps(defaults), media_type="application/json")
+    return Response(
+        content=orjson.dumps(defaults, option=orjson.OPT_NON_STR_KEYS),
+        media_type="application/json",
+    )

@@ -11,6 +11,7 @@ import random
 from statistics import fmean
 from typing import Any
 
+from joblib import Parallel, delayed
 import numpy as np
 
 from .agent import Agent, initialize_agents
@@ -22,7 +23,7 @@ from .network import (
     get_influence_weights,
     get_predecessors,
 )
-from .recommender import generate_feed
+from .recommender import generate_feed_vectorized
 
 
 try:
@@ -38,6 +39,10 @@ except NameError:
 # generate_feed: 97.7% of total time (~155.92s)
 # opinion_update: 2.1% of total time (~3.36s)
 # Baseline command: `kernprof -l sim/simulation.py`
+# PERF OPT (update after each optimization pass):
+# run_simulation N=200 T=200: 5.80s (local benchmark)
+# run_simulation N=1000 T=100: 26.24s (local benchmark)
+# profile command: `kernprof -l -m sim.simulation`
 
 
 BASE_SHARE_PROB = 0.18
@@ -63,6 +68,39 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "initial_opinion_distribution": "uniform",
     "seed": 42,
 }
+
+
+def _agent_tick_seed(base_seed: int, tick: int, agent_id: int) -> int:
+    """Derive deterministic random seeds safe for threaded execution."""
+    return int(base_seed + tick * 1_000_003 + agent_id * 9_176)
+
+
+def _process_agent_tick(
+    agent: Agent,
+    feed: list[Content],
+    neighbors: list[Agent],
+    weights: dict[int, float],
+    random_seed: int,
+) -> tuple[int, float, float, list[Content]]:
+    """Process Step 3/4/5 for one agent without shared-state mutation."""
+    # STUB: Phase 2 consumption/arousal model.
+    new_arousal = 0.0
+
+    local_rng = random.Random(random_seed)
+    shared: list[Content] = []
+    for content in feed:
+        # STUB: Phase 2 sigmoid sharing probability.
+        if local_rng.random() < BASE_SHARE_PROB:
+            shared.append(content)
+
+    social_update = float(agent.compute_update(neighbors, weights))
+    if agent.stubbornness >= 1.0 or not feed:
+        return (agent.id, social_update, new_arousal, shared)
+
+    feed_mean_ideology = fmean(content.ideological_score for content in feed)
+    feed_weight = FEED_INFLUENCE_MAX * float(agent.susceptibility)
+    blended = (1.0 - feed_weight) * social_update + feed_weight * float(feed_mean_ideology)
+    return (agent.id, _clamp_opinion(blended), new_arousal, shared)
 
 
 def _assert_probability(name: str, value: float) -> None:
@@ -173,6 +211,7 @@ def run_simulation(
 
     rng = np.random.default_rng(int(merged_config["seed"]))
     py_rng = random.Random(int(merged_config["seed"]))
+    base_seed = int(merged_config["seed"])
 
     agents = initialize_agents(
         n_agents=int(merged_config["N"]),
@@ -222,59 +261,69 @@ def run_simulation(
             candidate_pool: list[Content] = list(current_tick_pool)
             for predecessor_id in predecessor_ids:
                 candidate_pool.extend(previous_shared_content.get(predecessor_id, []))
+            if candidate_pool:
+                content_ideo_array = np.array(
+                    [content.ideological_score for content in candidate_pool],
+                    dtype=np.float64,
+                )
+                content_virality_array = np.array(
+                    [content.virality for content in candidate_pool],
+                    dtype=np.float64,
+                )
+            else:
+                content_ideo_array = np.array([], dtype=np.float64)
+                content_virality_array = np.array([], dtype=np.float64)
 
-            feeds[agent.id] = generate_feed(
+            feeds[agent.id] = generate_feed_vectorized(
                 agent=agent,
                 candidate_pool=candidate_pool,
+                content_ideo_array=content_ideo_array,
+                content_virality_array=content_virality_array,
                 k_exp=k_exp,
                 alpha=alpha,
                 beta_pop=beta_pop,
             )
 
-        # Step 3: CONTENT CONSUMPTION
-        consumed_items: dict[int, list[Content]] = {}
-        for agent in active_agents:
-            consumed = feeds.get(agent.id, [])
-            consumed_items[agent.id] = consumed
-            # STUB: Phase 2 — Emotion update at consumption time.
-            # See implementation plan Phase 2, Step 2.1 for full implementation.
-            agent.emotional_arousal = 0.0
+        # Step 3/4/5: compute per-agent outcomes, then synchronized apply.
+        # For smaller populations, serial execution avoids joblib scheduling overhead.
+        if len(active_agents) < 300:
+            step_results = [
+                _process_agent_tick(
+                    agent=agent,
+                    feed=feeds.get(agent.id, []),
+                    neighbors=[G.nodes[node_id]["agent"] for node_id in get_predecessors(G, agent.id)],
+                    weights=get_influence_weights(G, agent.id),
+                    random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
+                )
+                for agent in active_agents
+            ]
+        else:
+            step_results = Parallel(n_jobs=-1, prefer="threads")(
+                delayed(_process_agent_tick)(
+                    agent=agent,
+                    feed=feeds.get(agent.id, []),
+                    neighbors=[G.nodes[node_id]["agent"] for node_id in get_predecessors(G, agent.id)],
+                    weights=get_influence_weights(G, agent.id),
+                    random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
+                )
+                for agent in active_agents
+            )
 
-        # Step 4: SHARING DECISION
+        consumed_items: dict[int, list[Content]] = {
+            agent.id: feeds.get(agent.id, []) for agent in active_agents
+        }
         shared_content: dict[int, list[Content]] = {}
-        for agent in active_agents:
-            shared: list[Content] = []
-            for content in consumed_items.get(agent.id, []):
-                # STUB: Phase 2 — Sigmoid sharing probability using arousal/valence.
-                # See implementation plan Phase 2, Step 2.2 for full implementation.
-                if py_rng.random() < BASE_SHARE_PROB:
-                    shared.append(content)
-            shared_content[agent.id] = shared
-
-        # Step 5: OPINION UPDATE
         new_opinions: dict[int, float] = {}
-        for agent in active_agents:
-            predecessor_ids = get_predecessors(G, agent.id)
-            neighbors = [G.nodes[node_id]["agent"] for node_id in predecessor_ids]
-            weights = get_influence_weights(G, agent.id)
-
-            social_update = float(agent.compute_update(neighbors, weights))
-            feed = consumed_items.get(agent.id, [])
-
-            if agent.stubbornness >= 1.0 or not feed:
-                new_opinions[agent.id] = social_update
-                continue
-
-            # Recommender-mediated exposure effect: feed ideology nudges opinion
-            # while preserving the primary social update dynamics.
-            feed_mean_ideology = fmean(content.ideological_score for content in feed)
-            feed_weight = FEED_INFLUENCE_MAX * float(agent.susceptibility)
-            blended = (1.0 - feed_weight) * social_update + feed_weight * float(feed_mean_ideology)
-            new_opinions[agent.id] = _clamp_opinion(blended)
+        new_arousals: dict[int, float] = {}
+        for agent_id, new_opinion, new_arousal, shared in step_results:
+            shared_content[agent_id] = shared
+            new_opinions[agent_id] = float(new_opinion)
+            new_arousals[agent_id] = float(new_arousal)
 
         # Apply simultaneously to avoid order bias.
         for agent in active_agents:
             agent.opinion = float(new_opinions.get(agent.id, agent.opinion))
+            agent.emotional_arousal = float(new_arousals.get(agent.id, 0.0))
 
         # SIR transitions (triggered by misinformation in consumed feed).
         for agent in active_agents:
