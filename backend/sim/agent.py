@@ -10,12 +10,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from math import floor
+import random
 from typing import Literal
 
 import numpy as np
 
 
-AgentType = Literal["stubborn", "flexible", "zealot", "bot", "hk"]
+AgentType = Literal["stubborn", "flexible", "zealot", "bot", "hk", "contrarian"]
 SIRState = Literal["S", "I", "R"]
 
 
@@ -35,6 +36,7 @@ BOT_ACTIVITY_STD = 0.05
 MEDIA_LITERACY_MIN = 0.2
 MEDIA_LITERACY_MAX = 0.8
 HK_CONFIDENCE_BOUND_DEFAULT = 0.3
+CONTRARIAN_PROB_DEFAULT = 0.3
 BIMODAL_PEAK = 0.7
 BIMODAL_STD = 0.15
 
@@ -121,7 +123,7 @@ class Agent:
         _assert_probability("misinfo_rate", self.misinfo_rate)
 
         assert self.id >= 0, f"id must be non-negative, got {self.id}"
-        assert self.agent_type in {"stubborn", "flexible", "zealot", "bot", "hk"}
+        assert self.agent_type in {"stubborn", "flexible", "zealot", "bot", "hk", "contrarian"}
         assert self.sir_state in {"S", "I", "R"}, f"invalid sir_state: {self.sir_state}"
 
         if not self.opinion_history:
@@ -221,6 +223,38 @@ class HKAgent(Agent):
         return _clamp_opinion(float(np.mean(in_bound)))
 
 
+@dataclass(slots=True)
+class ContrarianAgent(Agent):
+    """Contrarian agent update model.
+
+    With probability p_c, move away from neighbor social pressure; otherwise
+    follow the standard Friedkin-Johnsen update rule (agent reference Part 5).
+    """
+
+    def compute_update(
+        self,
+        neighbors: list[Agent],
+        influence_weights: dict[int, float],
+    ) -> float:
+        if not neighbors:
+            return self.opinion
+
+        normalized_weights = _normalize_influence_weights(neighbors, influence_weights)
+        neighbor_avg = sum(
+            normalized_weights[neighbor.id] * neighbor.opinion for neighbor in neighbors
+        )
+        influence_delta = float(neighbor_avg) - float(self.opinion)
+
+        if random.random() < float(self.contrarian_prob):
+            updated = float(self.opinion) - (1.0 - float(self.stubbornness)) * influence_delta
+        else:
+            updated = float(self.stubbornness) * float(self.initial_opinion) + (
+                1.0 - float(self.stubbornness)
+            ) * float(neighbor_avg)
+
+        return _clamp_opinion(updated)
+
+
 def sample_initial_opinion(
     rng: np.random.Generator,
     distribution: Literal["uniform", "bimodal"] = "uniform",
@@ -264,6 +298,8 @@ def create_agent(
     stubbornness = float(rng.uniform(STUBBORNNESS_MIN, STUBBORNNESS_MAX))
     misinfo_rate = 0.0
 
+    contrarian_prob = 0.0
+
     if agent_type in {"zealot", "bot"}:
         extreme = 1.0 if float(rng.random()) >= 0.5 else -1.0
         opinion = extreme
@@ -271,6 +307,8 @@ def create_agent(
         stubbornness = 1.0
     elif agent_type == "flexible":
         stubbornness = 0.0
+    elif agent_type == "contrarian":
+        contrarian_prob = CONTRARIAN_PROB_DEFAULT
 
     if agent_type == "bot":
         misinfo_rate = bot_misinfo_rate
@@ -288,7 +326,7 @@ def create_agent(
         emotional_arousal=0.0,
         media_literacy=float(rng.uniform(MEDIA_LITERACY_MIN, MEDIA_LITERACY_MAX)),
         confidence_bound=HK_CONFIDENCE_BOUND_DEFAULT,
-        contrarian_prob=0.0,
+        contrarian_prob=contrarian_prob,
         suspicion_score=0.0,
         is_active=True,
         sir_state="S",
@@ -298,6 +336,10 @@ def create_agent(
 
     if agent_type == "flexible":
         return FlexibleAgent(**common_kwargs)
+    if agent_type == "hk":
+        return HKAgent(**common_kwargs)
+    if agent_type == "contrarian":
+        return ContrarianAgent(**common_kwargs)
     return StubbornAgent(**common_kwargs)
 
 
@@ -319,7 +361,7 @@ def initialize_agents(
 
     mix_total = 0.0
     for agent_type, fraction in agent_mix.items():
-        if agent_type not in {"stubborn", "flexible", "zealot", "bot"}:
+        if agent_type not in {"stubborn", "flexible", "zealot", "bot", "hk", "contrarian"}:
             raise ValueError(f"Unsupported agent type in mix: {agent_type}")
         _assert_probability(f"agent_mix[{agent_type}]", fraction)
         mix_total += fraction
@@ -368,6 +410,7 @@ def initialize_agents(
 __all__ = [
     "Agent",
     "AgentType",
+    "ContrarianAgent",
     "FlexibleAgent",
     "HKAgent",
     "SIRState",
