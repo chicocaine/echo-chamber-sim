@@ -402,6 +402,85 @@ def run_simulation(
     }
 
 
+def aggregate_snapshots(
+    all_snapshots: list[list[dict[str, Any]]],
+) -> dict[str, list[int] | list[float]]:
+    """Aggregate multi-run snapshot series into mean/std metric bands.
+
+    Expected input shape:
+    - outer list: one element per run
+    - inner list: one snapshot dict per logged tick
+    - snapshot dict keys: tick + metric names
+    """
+    if not all_snapshots:
+        return {"tick": []}
+
+    first_run = all_snapshots[0]
+    if not first_run:
+        return {"tick": []}
+
+    expected_len = len(first_run)
+    for run_snapshots in all_snapshots:
+        if len(run_snapshots) != expected_len:
+            raise ValueError(
+                "All runs must have the same snapshot count for aggregation"
+            )
+
+    metric_names = [key for key in first_run[0].keys() if key != "tick"]
+    tick_values = [int(snapshot["tick"]) for snapshot in first_run]
+
+    aggregated: dict[str, list[int] | list[float]] = {
+        "tick": tick_values,
+    }
+    for metric_name in metric_names:
+        aggregated[f"{metric_name}_mean"] = []
+        aggregated[f"{metric_name}_std"] = []
+
+    for snapshot_idx, tick in enumerate(tick_values):
+        for run_snapshots in all_snapshots:
+            run_tick = int(run_snapshots[snapshot_idx]["tick"])
+            if run_tick != tick:
+                raise ValueError(
+                    "All runs must log snapshots at identical tick values for aggregation"
+                )
+
+        for metric_name in metric_names:
+            values = np.array(
+                [
+                    float(run_snapshots[snapshot_idx][metric_name])
+                    for run_snapshots in all_snapshots
+                ],
+                dtype=np.float64,
+            )
+            aggregated[f"{metric_name}_mean"].append(float(np.mean(values)))
+            aggregated[f"{metric_name}_std"].append(float(np.std(values)))
+
+    return aggregated
+
+
+def run_replicated(config: dict[str, Any], n_runs: int = 10) -> dict[str, Any]:
+    """Run deterministic multi-seed simulation replicates and aggregate metrics."""
+    if n_runs <= 0:
+        raise ValueError(f"n_runs must be > 0, got {n_runs}")
+
+    merged_config: dict[str, Any] = {**DEFAULT_CONFIG, **config}
+    base_seed = int(merged_config["seed"])
+
+    all_snapshots: list[list[dict[str, Any]]] = []
+    for run_idx in range(n_runs):
+        seed = base_seed + run_idx
+        run_result = run_simulation({**merged_config, "seed": seed})
+        all_snapshots.append(run_result["snapshots"])
+
+    aggregated = aggregate_snapshots(all_snapshots)
+    return {
+        "config": merged_config,
+        "n_runs": n_runs,
+        "aggregated": aggregated,
+        "all_runs": all_snapshots,
+    }
+
+
 if __name__ == "__main__":
     result = run_simulation()
     print(
