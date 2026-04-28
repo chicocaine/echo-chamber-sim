@@ -14,15 +14,18 @@ from typing import Protocol
 import numpy as np
 
 
-# Content generation defaults from implementation plan MVP Step 3.
+# Content generation defaults from implementation plan MVP Step 3 and Phase 2.
 IDEOLOGICAL_NOISE_STD = 0.1
-NORMAL_CONTENT_EMOTION_MIN = 0.2
-NORMAL_CONTENT_EMOTION_MAX = 0.6
 NORMAL_MISINFO_SCORE = 0.05
 BOT_MISINFO_MIN = 0.7
 BOT_MISINFO_MAX = 1.0
 VIRALITY_MIN = 0.1
 VIRALITY_MAX = 0.9
+# Phase 2: Emotional valence beta distribution parameters (ref doc Part 6)
+MISINFO_VALENCE_ALPHA = 3.0  # skewed toward high valence
+MISINFO_VALENCE_BETA = 1.0
+NORMAL_VALENCE_ALPHA = 1.0  # skewed toward low valence
+NORMAL_VALENCE_BETA = 3.0
 
 
 class AgentForContent(Protocol):
@@ -108,6 +111,21 @@ def sample_misinfo_score(agent: AgentForContent, rng: np.random.Generator) -> fl
     return NORMAL_MISINFO_SCORE
 
 
+def sample_emotional_valence(is_misinformation: bool, rng: np.random.Generator) -> float:
+    """Sample emotional valence using Beta distribution (Phase 2 Step 2.1).
+
+    Misinformation content: Beta(3, 1) — skewed toward high valence.
+    Normal content: Beta(1, 3) — skewed toward low valence.
+    """
+    if is_misinformation:
+        return _clamp_probability(
+            float(rng.beta(MISINFO_VALENCE_ALPHA, MISINFO_VALENCE_BETA))
+        )
+    return _clamp_probability(
+        float(rng.beta(NORMAL_VALENCE_ALPHA, NORMAL_VALENCE_BETA))
+    )
+
+
 def generate_content_item(
     agent: AgentForContent,
     content_id: int,
@@ -118,10 +136,9 @@ def generate_content_item(
     ideological_score = _clamp_opinion(
         float(rng.normal(loc=agent.opinion, scale=IDEOLOGICAL_NOISE_STD))
     )
-    emotional_valence = float(
-        rng.uniform(NORMAL_CONTENT_EMOTION_MIN, NORMAL_CONTENT_EMOTION_MAX)
-    )
     misinfo_score = sample_misinfo_score(agent, rng)
+    is_misinformation = bool(misinfo_score > 0.5)
+    emotional_valence = sample_emotional_valence(is_misinformation, rng)
     virality = float(rng.uniform(VIRALITY_MIN, VIRALITY_MAX))
     source_credibility = _clamp_probability(agent.trust)
     belief_update_weight = compute_belief_update_weight(
@@ -139,7 +156,7 @@ def generate_content_item(
         misinfo_score=misinfo_score,
         virality=virality,
         source_credibility=source_credibility,
-        is_misinformation=bool(misinfo_score > 0.5),
+        is_misinformation=is_misinformation,
         belief_update_weight=belief_update_weight,
         topic_vector=[],
         coordinated_campaign_id=None,
@@ -169,5 +186,6 @@ __all__ = [
     "compute_belief_update_weight",
     "generate_content_item",
     "maybe_generate_content",
+    "sample_emotional_valence",
     "sample_misinfo_score",
 ]

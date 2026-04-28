@@ -33,6 +33,7 @@ class SimConfig(BaseModel):
     sir_beta: float = 0.3
     sir_gamma: float = 0.05
     initial_opinion_distribution: Literal["uniform", "bimodal"] = "uniform"
+    emotional_decay: float = 0.85
     seed: int = 42
 
     @model_validator(mode="after")
@@ -55,6 +56,7 @@ class SimConfig(BaseModel):
             "beta_pop": self.beta_pop,
             "sir_beta": self.sir_beta,
             "sir_gamma": self.sir_gamma,
+            "emotional_decay": self.emotional_decay,
         }
         for name, value in probability_fields.items():
             if not 0.0 <= value <= 1.0:

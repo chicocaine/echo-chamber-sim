@@ -71,6 +71,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "sir_beta": 0.3,
     "sir_gamma": 0.05,
     "initial_opinion_distribution": "uniform",
+    "emotional_decay": 0.85,
     "seed": 42,
 }
 
@@ -86,19 +87,35 @@ def _process_agent_tick(
     neighbors: list[Agent],
     weights: dict[int, float],
     alpha: float,
+    emotional_decay: float,
     random_seed: int,
 ) -> tuple[int, float, float, list[Content]]:
-    """Process Step 3/4/5 for one agent without shared-state mutation."""
-    # STUB: Phase 2 consumption/arousal model.
-    new_arousal = 0.0
+    """Process Step 3/4/5 for one agent without shared-state mutation.
+
+    Step 3: Content consumption with arousal update (Phase 2).
+    Step 4: Sharing decision.
+    Step 5: Opinion update.
+    """
+    # Step 3: CONTENT CONSUMPTION — update arousal per content item (Phase 2 Step 2.1)
+    new_arousal = float(agent.emotional_arousal)
+    for content in feed:
+        # Arousal decay + valence injection: e_i(t+1) = λ * e_i(t) + (1 - λ) * v_c
+        lambda_decay = float(emotional_decay)
+        new_arousal = lambda_decay * new_arousal + (1.0 - lambda_decay) * float(
+            content.emotional_valence
+        )
+        # Clamp to [0, 1]
+        new_arousal = float(np.clip(new_arousal, 0.0, 1.0))
 
     local_rng = random.Random(random_seed)
     shared: list[Content] = []
+    # Step 4: SHARING DECISION (Phase 2 stub — fixed probability for now)
     for content in feed:
         # STUB: Phase 2 sigmoid sharing probability.
         if local_rng.random() < BASE_SHARE_PROB:
             shared.append(content)
 
+    # Step 5: OPINION UPDATE
     social_update = float(agent.compute_update(neighbors, weights))
     if agent.stubbornness >= 1.0 or not feed:
         return (agent.id, social_update, new_arousal, shared)
@@ -138,6 +155,7 @@ def _validate_config(config: dict[str, Any]) -> None:
         "sir_beta",
         "sir_gamma",
         "initial_opinion_distribution",
+        "emotional_decay",
         "seed",
     }
     missing = required_keys.difference(config.keys())
@@ -317,6 +335,7 @@ def run_simulation(
 
         # Step 3/4/5: compute per-agent outcomes, then synchronized apply.
         # For smaller populations, serial execution avoids joblib scheduling overhead.
+        emotional_decay = float(merged_config["emotional_decay"])
         if len(active_agents) < 300:
             step_results = [
                 _process_agent_tick(
@@ -325,6 +344,7 @@ def run_simulation(
                     neighbors=neighbors_by_agent[agent.id],
                     weights=influence_weights_by_agent[agent.id],
                     alpha=alpha,
+                    emotional_decay=emotional_decay,
                     random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
                 )
                 for agent in active_agents
@@ -337,6 +357,7 @@ def run_simulation(
                     neighbors=neighbors_by_agent[agent.id],
                     weights=influence_weights_by_agent[agent.id],
                     alpha=alpha,
+                    emotional_decay=emotional_decay,
                     random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
                 )
                 for agent in active_agents
