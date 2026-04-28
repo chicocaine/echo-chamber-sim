@@ -1,0 +1,3163 @@
+{
+  "config": {
+    "N": 200,
+    "avg_degree": 16,
+    "rewire_prob": 0.1,
+    "T": 200,
+    "snapshot_interval": 6,
+    "alpha": 0.65,
+    "beta_pop": 0.2,
+    "k_exp": 20,
+    "agent_mix": {
+      "stubborn": 0.6,
+      "flexible": 0.2,
+      "zealot": 0.15,
+      "bot": 0.05
+    },
+    "sir_beta": 0.3,
+    "sir_gamma": 0.05,
+    "initial_opinion_distribution": "uniform",
+    "seed": 42
+  },
+  "n_runs": 10,
+  "aggregated": {
+    "tick": [
+      0,
+      6,
+      12,
+      18,
+      24,
+      30,
+      36,
+      42,
+      48,
+      54,
+      60,
+      66,
+      72,
+      78,
+      84,
+      90,
+      96,
+      102,
+      108,
+      114,
+      120,
+      126,
+      132,
+      138,
+      144,
+      150,
+      156,
+      162,
+      168,
+      174,
+      180,
+      186,
+      192,
+      198
+    ],
+    "opinion_variance_mean": [
+      0.22783708584787496,
+      0.22743931921830313,
+      0.22820405160721383,
+      0.228276551892161,
+      0.22827612487054041,
+      0.22827725693412465,
+      0.22831877941817819,
+      0.22833031271068757,
+      0.22836018386245663,
+      0.22835639714891265,
+      0.22839755995259065,
+      0.2283497518873215,
+      0.22833295304905085,
+      0.22834598502226228,
+      0.22828013202472533,
+      0.22833402430618052,
+      0.2283367131747558,
+      0.22833854586256322,
+      0.22832784405173437,
+      0.2283496873457948,
+      0.22838551770390728,
+      0.22837099287984652,
+      0.22839141339878627,
+      0.22832905932226452,
+      0.22834325428208757,
+      0.2283553093998946,
+      0.22839695268333876,
+      0.22834080716658783,
+      0.22833769153803884,
+      0.2283297845758258,
+      0.2283194681069983,
+      0.2283465115898795,
+      0.2283662981942781,
+      0.2283824592009685
+    ],
+    "opinion_variance_std": [
+      0.003092647637986645,
+      0.007724246355979254,
+      0.008212627908586121,
+      0.008285030614924254,
+      0.008312684906434048,
+      0.008270361747917192,
+      0.008297492656333486,
+      0.008358531942087062,
+      0.008307035833582777,
+      0.008285207609869614,
+      0.008334575092046747,
+      0.008359680474062756,
+      0.008289539304921578,
+      0.008370044252759817,
+      0.008274614091836734,
+      0.008298925328358225,
+      0.008327240131685633,
+      0.008307841274303803,
+      0.008368988897180343,
+      0.008347446097990508,
+      0.008370317442675641,
+      0.008345341260378553,
+      0.008324477316536611,
+      0.008314924573443903,
+      0.008326665216279434,
+      0.008316021184667234,
+      0.008394826172977337,
+      0.008289697278118223,
+      0.0082606169068233,
+      0.008323457313854504,
+      0.008291296045487714,
+      0.008312324515758836,
+      0.00833319494007667,
+      0.00836083261149492
+    ],
+    "polarization_index_mean": [
+      0.44736473338281446,
+      0.4154370077965357,
+      0.41510387341692623,
+      0.41511000127134495,
+      0.4150410087614764,
+      0.415026525385097,
+      0.4150237434059699,
+      0.4150376716011877,
+      0.41505542314382016,
+      0.415057190422263,
+      0.4151208092314883,
+      0.4151002148429079,
+      0.415089955287148,
+      0.4150723422490774,
+      0.4149991592539434,
+      0.4150544065411289,
+      0.4151135730990029,
+      0.4150502998595883,
+      0.41502488894570344,
+      0.4150841199826985,
+      0.41503023326767624,
+      0.4150622139679828,
+      0.41506887222028366,
+      0.4150179471502914,
+      0.41504356956523275,
+      0.41502991775184983,
+      0.4150826022164327,
+      0.4151113118791672,
+      0.41503872605706205,
+      0.4150668056760267,
+      0.4150115401378319,
+      0.4151057561607582,
+      0.4151101755278577,
+      0.41509390006926566
+    ],
+    "polarization_index_std": [
+      0.013579616273711686,
+      0.014492319508456055,
+      0.014628563444989655,
+      0.014592130457932673,
+      0.014588304726846734,
+      0.014598855476056658,
+      0.014587147685790055,
+      0.014576145087561979,
+      0.014555122492647293,
+      0.014609177213867196,
+      0.014561892100505886,
+      0.014585422027531408,
+      0.014652356891917849,
+      0.014532412070727767,
+      0.014631366369859927,
+      0.014595471802937254,
+      0.014562689461126876,
+      0.014557408057133275,
+      0.014596460462785513,
+      0.01460701290395972,
+      0.014609259958960674,
+      0.01459765539360093,
+      0.014591725598344872,
+      0.014588309009967913,
+      0.014628301603790039,
+      0.01454657231883594,
+      0.014539735381793605,
+      0.01457395768584212,
+      0.014615526651651266,
+      0.01463281644944297,
+      0.014625945754022774,
+      0.014553912373880854,
+      0.014608510513294138,
+      0.014556751809621574
+    ],
+    "assortativity_mean": [
+      0.11264421297476088,
+      0.17943271644134998,
+      0.18323206683272933,
+      0.18352945659823328,
+      0.18358578573344925,
+      0.18362100988243052,
+      0.18375289736985176,
+      0.18379830810808945,
+      0.18390096002351328,
+      0.18393888181078835,
+      0.18400305966939468,
+      0.18379383104883645,
+      0.18375621439820974,
+      0.18381347274767573,
+      0.18365430971900915,
+      0.1838050227451887,
+      0.18376932284924657,
+      0.18382622680049102,
+      0.18379067829168622,
+      0.1838336065742271,
+      0.18400336617596597,
+      0.18391431413910503,
+      0.18403476447660863,
+      0.18382866465367395,
+      0.18386101130547883,
+      0.1838989449896193,
+      0.18401087863389037,
+      0.18378279535655292,
+      0.1838506433844119,
+      0.18375430908488186,
+      0.18382698612154424,
+      0.18384785962484032,
+      0.1838813639091294,
+      0.18392680724318466
+    ],
+    "assortativity_std": [
+      0.05208073162069615,
+      0.08667778482323969,
+      0.0882646118394416,
+      0.08857943553508944,
+      0.08865659507785999,
+      0.08851602080249198,
+      0.08858076077516167,
+      0.08876081724511903,
+      0.08856926829817603,
+      0.08855299459775914,
+      0.08866710621939403,
+      0.08881083085801136,
+      0.08859100319583006,
+      0.08874717946075195,
+      0.08845326943511762,
+      0.08855373038255034,
+      0.08862368008774837,
+      0.08860058383562788,
+      0.08882385352906737,
+      0.08875512584520193,
+      0.08880291991286336,
+      0.0887034654452981,
+      0.08860297031530595,
+      0.08861063615895852,
+      0.08868919770135256,
+      0.08859828583878891,
+      0.08887349599778686,
+      0.08846650326354102,
+      0.08846023500407932,
+      0.08868382382402192,
+      0.08856392225628253,
+      0.088557726619476,
+      0.0886544680671835,
+      0.08871721824827604
+    ],
+    "opinion_entropy_mean": [
+      2.2619908759544045,
+      2.2318894709881967,
+      2.2439861239687082,
+      2.2444908421124503,
+      2.2435606847576595,
+      2.2420012652640247,
+      2.241340177861547,
+      2.2425326266994228,
+      2.2444470824500895,
+      2.2450388381433113,
+      2.244177736991664,
+      2.2435023846101965,
+      2.242195079315711,
+      2.246572724938441,
+      2.2410602286009196,
+      2.2423922890374977,
+      2.244233954436921,
+      2.2436736694479054,
+      2.242737384505413,
+      2.2442758983975186,
+      2.242831080768851,
+      2.2429872925683325,
+      2.2437165338123974,
+      2.2430756786219512,
+      2.242825832515032,
+      2.2428861126162913,
+      2.243745816774317,
+      2.2419556493398973,
+      2.241856910812694,
+      2.2433460895501467,
+      2.2444312073388075,
+      2.2446070258553563,
+      2.242089097128421,
+      2.2431916155533473
+    ],
+    "opinion_entropy_std": [
+      0.0428737662325819,
+      0.10229460099731245,
+      0.10813006145781703,
+      0.10952197304162144,
+      0.10708593127513179,
+      0.10858287413614078,
+      0.10876404017205031,
+      0.10829343422150971,
+      0.11129834188254613,
+      0.11049653386726324,
+      0.1112920039042164,
+      0.1097866219647915,
+      0.10830170407010394,
+      0.10978823593038034,
+      0.10872112336671476,
+      0.10805131634619664,
+      0.11029107639454751,
+      0.10740905943644498,
+      0.1117243046308316,
+      0.10922701618651816,
+      0.1096144842998973,
+      0.1095556491563555,
+      0.10860263289528344,
+      0.10921495915908572,
+      0.10735657414810644,
+      0.11091545356792404,
+      0.11145240112090839,
+      0.10829662075075958,
+      0.10967291573139593,
+      0.11087756070218177,
+      0.10764258400732128,
+      0.11042388948957692,
+      0.10953350855811116,
+      0.10962180883860911
+    ],
+    "misinfo_prevalence_mean": [
+      0.029500000000000005,
+      0.09,
+      0.10299999999999998,
+      0.0915,
+      0.08199999999999999,
+      0.07050000000000001,
+      0.053000000000000005,
+      0.0445,
+      0.038500000000000006,
+      0.028999999999999998,
+      0.026000000000000002,
+      0.016000000000000004,
+      0.013500000000000002,
+      0.0105,
+      0.009000000000000001,
+      0.008000000000000002,
+      0.007000000000000001,
+      0.0055,
+      0.0045,
+      0.0025,
+      0.0025,
+      0.0025,
+      0.0015,
+      0.001,
+      0.0005,
+      0.0005,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "misinfo_prevalence_std": [
+      0.013865424623862048,
+      0.01596871942267131,
+      0.015684387141358124,
+      0.015819292019556373,
+      0.01805547008526779,
+      0.016948451256678293,
+      0.014177446878757827,
+      0.015564382416273382,
+      0.01285496013218244,
+      0.0066332495807108005,
+      0.007,
+      0.005385164807134504,
+      0.0055,
+      0.006103277807866852,
+      0.005385164807134505,
+      0.005099019513592784,
+      0.004,
+      0.0035000000000000005,
+      0.0035000000000000005,
+      0.003354101966249685,
+      0.003354101966249685,
+      0.003354101966249685,
+      0.0032015621187164245,
+      0.003,
+      0.0015,
+      0.0015,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "all_runs": [
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.23164273865249352,
+        "polarization_index": 0.47039527491966987,
+        "assortativity": 0.052431174208249096,
+        "opinion_entropy": 2.290273846561815,
+        "misinfo_prevalence": 0.025
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.2152257546186021,
+        "polarization_index": 0.43644993741273025,
+        "assortativity": 0.048561212334071464,
+        "opinion_entropy": 2.046977123974719,
+        "misinfo_prevalence": 0.09
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.21513304196662145,
+        "polarization_index": 0.4359156634888596,
+        "assortativity": 0.04937006921312379,
+        "opinion_entropy": 2.0459202474092555,
+        "misinfo_prevalence": 0.105
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.215135384654401,
+        "polarization_index": 0.4360672309134933,
+        "assortativity": 0.049390152360721,
+        "opinion_entropy": 2.0433954864773316,
+        "misinfo_prevalence": 0.09
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.2151143922488549,
+        "polarization_index": 0.43601472377296974,
+        "assortativity": 0.04935219863556688,
+        "opinion_entropy": 2.044668205637736,
+        "misinfo_prevalence": 0.095
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.21517937999357808,
+        "polarization_index": 0.4361373394475507,
+        "assortativity": 0.04949816262107763,
+        "opinion_entropy": 2.0398618470220637,
+        "misinfo_prevalence": 0.09
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.21519077224717648,
+        "polarization_index": 0.43613294317959783,
+        "assortativity": 0.04958240064650583,
+        "opinion_entropy": 2.044668205637736,
+        "misinfo_prevalence": 0.07
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.21513470237381416,
+        "polarization_index": 0.43604473301126445,
+        "assortativity": 0.04935968184383901,
+        "opinion_entropy": 2.046610188324353,
+        "misinfo_prevalence": 0.07
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.215184549879338,
+        "polarization_index": 0.4360000007196833,
+        "assortativity": 0.04962586547304825,
+        "opinion_entropy": 2.046938339011349,
+        "misinfo_prevalence": 0.05
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.21519567944334028,
+        "polarization_index": 0.43609145762512347,
+        "assortativity": 0.04955596013164306,
+        "opinion_entropy": 2.04186456702594,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.21513315109991216,
+        "polarization_index": 0.4360598747409334,
+        "assortativity": 0.0492799782277823,
+        "opinion_entropy": 2.039224957503153,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.21511573483796084,
+        "polarization_index": 0.43607751492855074,
+        "assortativity": 0.04917536543742288,
+        "opinion_entropy": 2.044668205637736,
+        "misinfo_prevalence": 0.025
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.21513558229298177,
+        "polarization_index": 0.4361660632050547,
+        "assortativity": 0.049208557629208526,
+        "opinion_entropy": 2.046610188324353,
+        "misinfo_prevalence": 0.025
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.2151295023369401,
+        "polarization_index": 0.43601270084214677,
+        "assortativity": 0.04937117330835579,
+        "opinion_entropy": 2.0433954864773316,
+        "misinfo_prevalence": 0.025
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.2150787234554317,
+        "polarization_index": 0.43592349925246376,
+        "assortativity": 0.04922566133456399,
+        "opinion_entropy": 2.0418038297086807,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.21505345003274307,
+        "polarization_index": 0.4358786544603683,
+        "assortativity": 0.049155334649831954,
+        "opinion_entropy": 2.042440128824942,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.21500864927241548,
+        "polarization_index": 0.4359073093126035,
+        "assortativity": 0.04885926938736306,
+        "opinion_entropy": 2.044668205637736,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.21507222317110317,
+        "polarization_index": 0.4359332540916205,
+        "assortativity": 0.049180458702254744,
+        "opinion_entropy": 2.0454511153123516,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.21511338681788117,
+        "polarization_index": 0.43601365098303985,
+        "assortativity": 0.049310380881546205,
+        "opinion_entropy": 2.0376337702092697,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.2151291471023855,
+        "polarization_index": 0.4360415045207462,
+        "assortativity": 0.04931976142819023,
+        "opinion_entropy": 2.046610188324353,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.21509949552372526,
+        "polarization_index": 0.43580733247928616,
+        "assortativity": 0.04931113792511961,
+        "opinion_entropy": 2.0440313161188253,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.2151946632403309,
+        "polarization_index": 0.4359955020585369,
+        "assortativity": 0.04968665525390781,
+        "opinion_entropy": 2.0440313161188253,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.21511007265583962,
+        "polarization_index": 0.43580323277856825,
+        "assortativity": 0.049520671686415434,
+        "opinion_entropy": 2.0394166657400783,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.21509881618557194,
+        "polarization_index": 0.43584173586742336,
+        "assortativity": 0.049362958341441714,
+        "opinion_entropy": 2.0394166657400783,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.2151160209233509,
+        "polarization_index": 0.43594604233076256,
+        "assortativity": 0.04935921751762362,
+        "opinion_entropy": 2.046610188324353,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.21514290155713553,
+        "polarization_index": 0.435896856587631,
+        "assortativity": 0.049480166954739516,
+        "opinion_entropy": 2.0433954864773316,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.2150850424308622,
+        "polarization_index": 0.4358789617953984,
+        "assortativity": 0.04927066310034388,
+        "opinion_entropy": 2.0362499307909996,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.21523292500308044,
+        "polarization_index": 0.4361621677048447,
+        "assortativity": 0.049779977223790864,
+        "opinion_entropy": 2.042440128824942,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.21524431488642076,
+        "polarization_index": 0.4361031089185174,
+        "assortativity": 0.049898973985383364,
+        "opinion_entropy": 2.0394166657400783,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.21528379630420588,
+        "polarization_index": 0.43627408945856816,
+        "assortativity": 0.049818469167701794,
+        "opinion_entropy": 2.0394166657400783,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.2151602487619982,
+        "polarization_index": 0.435970469712112,
+        "assortativity": 0.049569781134143814,
+        "opinion_entropy": 2.0459202474092555,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.2151915128715207,
+        "polarization_index": 0.4360782070695144,
+        "assortativity": 0.049639741789346326,
+        "opinion_entropy": 2.046610188324353,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.21512022967946356,
+        "polarization_index": 0.4358948352945611,
+        "assortativity": 0.049451229404035964,
+        "opinion_entropy": 2.0370582084102677,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.21515955315847543,
+        "polarization_index": 0.4359814300849094,
+        "assortativity": 0.04948083203871498,
+        "opinion_entropy": 2.0394166657400783,
+        "misinfo_prevalence": 0.0
+      }
+    ],
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.22349975630594252,
+        "polarization_index": 0.4514627821094876,
+        "assortativity": 0.08590174112022395,
+        "opinion_entropy": 2.211121012744421,
+        "misinfo_prevalence": 0.025
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.2219507489212716,
+        "polarization_index": 0.4190142070769379,
+        "assortativity": 0.14979242781497648,
+        "opinion_entropy": 2.171000730952204,
+        "misinfo_prevalence": 0.09
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.22237825856278717,
+        "polarization_index": 0.41864785810298644,
+        "assortativity": 0.15273870656977417,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.08
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.2223902325867708,
+        "polarization_index": 0.4188668425253133,
+        "assortativity": 0.15264973938398882,
+        "opinion_entropy": 2.175229764098381,
+        "misinfo_prevalence": 0.07
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.222320887981169,
+        "polarization_index": 0.4186781822268402,
+        "assortativity": 0.15243851239545336,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.065
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.2223047570307765,
+        "polarization_index": 0.4186581636154571,
+        "assortativity": 0.15239893135041038,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.06
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.22237119495593252,
+        "polarization_index": 0.4186352929012908,
+        "assortativity": 0.1527680428701579,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.045
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.22234028244130397,
+        "polarization_index": 0.418678281417094,
+        "assortativity": 0.15263611710465239,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.22241337736583325,
+        "polarization_index": 0.41875446359053276,
+        "assortativity": 0.1528719763477002,
+        "opinion_entropy": 2.175966441262704,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.22245899488711784,
+        "polarization_index": 0.4187560255810854,
+        "assortativity": 0.15320262902144738,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.22242058602674677,
+        "polarization_index": 0.4185570981001675,
+        "assortativity": 0.15315917278170774,
+        "opinion_entropy": 2.1746657491323274,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.22234580140451507,
+        "polarization_index": 0.41872322015218316,
+        "assortativity": 0.15263602102770535,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.222478759147403,
+        "polarization_index": 0.4189512286393126,
+        "assortativity": 0.1530991135368969,
+        "opinion_entropy": 2.175966441262704,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.22232074690040515,
+        "polarization_index": 0.41862809195657036,
+        "assortativity": 0.15259038105713246,
+        "opinion_entropy": 2.175966441262704,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.22241055415251287,
+        "polarization_index": 0.41858087116150133,
+        "assortativity": 0.15306656665294094,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.2225189623284838,
+        "polarization_index": 0.4187252323425346,
+        "assortativity": 0.15345282557047063,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.22231525081170622,
+        "polarization_index": 0.4186539518315287,
+        "assortativity": 0.15255961000754964,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.22246433726349063,
+        "polarization_index": 0.41872015393207024,
+        "assortativity": 0.15324303895515806,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.22244288825759229,
+        "polarization_index": 0.41875081301278627,
+        "assortativity": 0.15308119597176417,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.22238822826515722,
+        "polarization_index": 0.4187651740484353,
+        "assortativity": 0.15283345621281688,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.22246171454463884,
+        "polarization_index": 0.4186386220364389,
+        "assortativity": 0.15327696705570545,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.2223922068145456,
+        "polarization_index": 0.4187561567533514,
+        "assortativity": 0.1527810581323284,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.22242770744597848,
+        "polarization_index": 0.4186771907393738,
+        "assortativity": 0.15303390815599455,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.2224466886452879,
+        "polarization_index": 0.4187947274364817,
+        "assortativity": 0.15310603685010576,
+        "opinion_entropy": 2.175966441262704,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.2224324241747879,
+        "polarization_index": 0.4188070812800945,
+        "assortativity": 0.15297048588422257,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.22249479760812144,
+        "polarization_index": 0.4186568820927796,
+        "assortativity": 0.15327789455888557,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.22231483068218444,
+        "polarization_index": 0.4187336986617153,
+        "assortativity": 0.15249469894172424,
+        "opinion_entropy": 2.175966441262704,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.2223501614895768,
+        "polarization_index": 0.41861760129085296,
+        "assortativity": 0.15282365406095783,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.22241025830693117,
+        "polarization_index": 0.4187027278371103,
+        "assortativity": 0.1529079876768813,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.22229923043213617,
+        "polarization_index": 0.4186545532137433,
+        "assortativity": 0.15254286306486659,
+        "opinion_entropy": 2.175966441262704,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.22245524846427256,
+        "polarization_index": 0.4187313264192338,
+        "assortativity": 0.15317536904935256,
+        "opinion_entropy": 2.175966441262704,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.22232083349176668,
+        "polarization_index": 0.4184823479134139,
+        "assortativity": 0.1528060523759962,
+        "opinion_entropy": 2.1761179796114694,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.22234827043646038,
+        "polarization_index": 0.418641876581081,
+        "assortativity": 0.15273958224461234,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.22237755600299877,
+        "polarization_index": 0.41874227280232995,
+        "assortativity": 0.15282050970931385,
+        "opinion_entropy": 2.1755375778884005,
+        "misinfo_prevalence": 0.0
+      }
+    ],
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.23213083890335537,
+        "polarization_index": 0.43706797784039947,
+        "assortativity": 0.1545404551413078,
+        "opinion_entropy": 2.3092710206822553,
+        "misinfo_prevalence": 0.04
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.2352422104290553,
+        "polarization_index": 0.4063740779335442,
+        "assortativity": 0.24100098801222974,
+        "opinion_entropy": 2.3457180850444135,
+        "misinfo_prevalence": 0.1
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.2358207847147819,
+        "polarization_index": 0.40605459788734477,
+        "assortativity": 0.24374749202992443,
+        "opinion_entropy": 2.35565475122581,
+        "misinfo_prevalence": 0.085
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.23572123852258697,
+        "polarization_index": 0.4059309690877198,
+        "assortativity": 0.24342199565711767,
+        "opinion_entropy": 2.3515174761100517,
+        "misinfo_prevalence": 0.07
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.23575893609510432,
+        "polarization_index": 0.4062206533712001,
+        "assortativity": 0.24336160952608846,
+        "opinion_entropy": 2.352599788717382,
+        "misinfo_prevalence": 0.065
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.23568385608494938,
+        "polarization_index": 0.40595862762259827,
+        "assortativity": 0.24338581408748688,
+        "opinion_entropy": 2.3492997484757288,
+        "misinfo_prevalence": 0.045
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.2359255444749509,
+        "polarization_index": 0.4060600440840645,
+        "assortativity": 0.24409572509046099,
+        "opinion_entropy": 2.35699629872549,
+        "misinfo_prevalence": 0.025
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.23585748835841713,
+        "polarization_index": 0.40595187116522596,
+        "assortativity": 0.24399388362667065,
+        "opinion_entropy": 2.3515174761100517,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.2359150777365788,
+        "polarization_index": 0.405821083646089,
+        "assortativity": 0.24426614647711964,
+        "opinion_entropy": 2.3560360091522643,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.23582801584725352,
+        "polarization_index": 0.4060439197756115,
+        "assortativity": 0.24377503571440473,
+        "opinion_entropy": 2.357014929304545,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.23595685744636696,
+        "polarization_index": 0.40608360962439244,
+        "assortativity": 0.24422211493518867,
+        "opinion_entropy": 2.357014929304545,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.23591403958740323,
+        "polarization_index": 0.4060682797999648,
+        "assortativity": 0.24402862841169862,
+        "opinion_entropy": 2.357014929304545,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.2358746379264656,
+        "polarization_index": 0.4060495245016338,
+        "assortativity": 0.24381989303481155,
+        "opinion_entropy": 2.3515174761100517,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.23590968034271864,
+        "polarization_index": 0.4060797322307665,
+        "assortativity": 0.24394889772106534,
+        "opinion_entropy": 2.361867845048153,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.23569389378232547,
+        "polarization_index": 0.4060071194932337,
+        "assortativity": 0.24307432446956206,
+        "opinion_entropy": 2.355533156979555,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.23589014535239491,
+        "polarization_index": 0.4059673860248232,
+        "assortativity": 0.24401263887135557,
+        "opinion_entropy": 2.3492997484757288,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.23582343041924747,
+        "polarization_index": 0.4060836114040937,
+        "assortativity": 0.24375483215143753,
+        "opinion_entropy": 2.361867845048153,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.23581042259029925,
+        "polarization_index": 0.406045323878095,
+        "assortativity": 0.24356435340225444,
+        "opinion_entropy": 2.354797201670222,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.2358990030931146,
+        "polarization_index": 0.4059284808627856,
+        "assortativity": 0.24408692972482496,
+        "opinion_entropy": 2.357014929304545,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.23595194398692423,
+        "polarization_index": 0.4060580570918782,
+        "assortativity": 0.2441964339616124,
+        "opinion_entropy": 2.3515174761100517,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.2359738993113284,
+        "polarization_index": 0.4058784337916631,
+        "assortativity": 0.24441004503010422,
+        "opinion_entropy": 2.3492997484757288,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.23597125599477992,
+        "polarization_index": 0.4060455747072892,
+        "assortativity": 0.2442837897380281,
+        "opinion_entropy": 2.357014929304545,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.23607239825374626,
+        "polarization_index": 0.40619282248343425,
+        "assortativity": 0.24454455164207148,
+        "opinion_entropy": 2.3602760242856604,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.23592738643445998,
+        "polarization_index": 0.40604550779246407,
+        "assortativity": 0.24406408858854992,
+        "opinion_entropy": 2.3515174761100517,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.2359824232165871,
+        "polarization_index": 0.40581082108947636,
+        "assortativity": 0.24457965479968746,
+        "opinion_entropy": 2.357014929304545,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.23592894108670656,
+        "polarization_index": 0.4059857361180977,
+        "assortativity": 0.24405299485953297,
+        "opinion_entropy": 2.3563703918536603,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.23590117820305173,
+        "polarization_index": 0.4060682210661096,
+        "assortativity": 0.2440367200877893,
+        "opinion_entropy": 2.361867845048153,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.23582408679375855,
+        "polarization_index": 0.40610285084769077,
+        "assortativity": 0.24366359924992148,
+        "opinion_entropy": 2.3563703918536603,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.23597493765121066,
+        "polarization_index": 0.4060862373309256,
+        "assortativity": 0.24418399792017448,
+        "opinion_entropy": 2.355533156979555,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.23599441290614884,
+        "polarization_index": 0.40596248757295383,
+        "assortativity": 0.24443339943782239,
+        "opinion_entropy": 2.35565475122581,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.23594132706269086,
+        "polarization_index": 0.40591950154509066,
+        "assortativity": 0.24430545715228658,
+        "opinion_entropy": 2.3563703918536603,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.2359219396770913,
+        "polarization_index": 0.4060663859746832,
+        "assortativity": 0.2441498940891398,
+        "opinion_entropy": 2.35565475122581,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.23590472297194348,
+        "polarization_index": 0.4060498491056239,
+        "assortativity": 0.24409239408775468,
+        "opinion_entropy": 2.355423108542052,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.2360148960964412,
+        "polarization_index": 0.405948073565731,
+        "assortativity": 0.2445052831288972,
+        "opinion_entropy": 2.357014929304545,
+        "misinfo_prevalence": 0.0
+      }
+    ],
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.22650005380510976,
+        "polarization_index": 0.4566928651604309,
+        "assortativity": 0.1026114667295251,
+        "opinion_entropy": 2.2609538649421315,
+        "misinfo_prevalence": 0.035
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.23212206320546322,
+        "polarization_index": 0.42452892537596704,
+        "assortativity": 0.1893659248697583,
+        "opinion_entropy": 2.3266868641687095,
+        "misinfo_prevalence": 0.07
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.23348434423539208,
+        "polarization_index": 0.424672465347102,
+        "assortativity": 0.19519325917064337,
+        "opinion_entropy": 2.3461126443673948,
+        "misinfo_prevalence": 0.1
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.23335271900723428,
+        "polarization_index": 0.4242444742200375,
+        "assortativity": 0.1949601942030922,
+        "opinion_entropy": 2.346841284434412,
+        "misinfo_prevalence": 0.11
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.23346571656622492,
+        "polarization_index": 0.42449077570751376,
+        "assortativity": 0.1951954345835082,
+        "opinion_entropy": 2.346841284434412,
+        "misinfo_prevalence": 0.115
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.23343326304222697,
+        "polarization_index": 0.4244174128372181,
+        "assortativity": 0.1952061116739996,
+        "opinion_entropy": 2.3460230224290575,
+        "misinfo_prevalence": 0.09
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.23339299051488724,
+        "polarization_index": 0.4242329342563662,
+        "assortativity": 0.19530983521188755,
+        "opinion_entropy": 2.34172766010891,
+        "misinfo_prevalence": 0.055
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.23370763825703975,
+        "polarization_index": 0.42458238903952306,
+        "assortativity": 0.19626160974471227,
+        "opinion_entropy": 2.3411017532370795,
+        "misinfo_prevalence": 0.045
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.2335678451462993,
+        "polarization_index": 0.4245869777540447,
+        "assortativity": 0.19563699258125933,
+        "opinion_entropy": 2.3452324290759123,
+        "misinfo_prevalence": 0.04
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.23358999048223317,
+        "polarization_index": 0.424372000877667,
+        "assortativity": 0.19595830730863514,
+        "opinion_entropy": 2.3450212011386875,
+        "misinfo_prevalence": 0.035
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.23360508858205498,
+        "polarization_index": 0.4245653819789428,
+        "assortativity": 0.1958376251384631,
+        "opinion_entropy": 2.3465162274381437,
+        "misinfo_prevalence": 0.035
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.23358872283501533,
+        "polarization_index": 0.4245496700510521,
+        "assortativity": 0.19582538804239263,
+        "opinion_entropy": 2.3484619623866916,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.23358819325819077,
+        "polarization_index": 0.42452376808923975,
+        "assortativity": 0.19579524083376015,
+        "opinion_entropy": 2.3427843160274007,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.23374233696781552,
+        "polarization_index": 0.4244836054142171,
+        "assortativity": 0.19652072653283534,
+        "opinion_entropy": 2.3484619623866916,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.23376889140327223,
+        "polarization_index": 0.42460331176564353,
+        "assortativity": 0.19635927324280836,
+        "opinion_entropy": 2.3427843160274007,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.23362374664241187,
+        "polarization_index": 0.42457500470013754,
+        "assortativity": 0.1958837714875011,
+        "opinion_entropy": 2.3450212011386875,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.2336212902947681,
+        "polarization_index": 0.4245448788925119,
+        "assortativity": 0.19591636167347842,
+        "opinion_entropy": 2.3455574860721806,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.23364332352466577,
+        "polarization_index": 0.4244248460842988,
+        "assortativity": 0.19611206469292394,
+        "opinion_entropy": 2.3450212011386875,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.23363254515699197,
+        "polarization_index": 0.4246307614800011,
+        "assortativity": 0.19583003990312695,
+        "opinion_entropy": 2.3468143270687416,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.23355702678043547,
+        "polarization_index": 0.42444760629692496,
+        "assortativity": 0.19573020572163877,
+        "opinion_entropy": 2.3427843160274007,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.23368123504204555,
+        "polarization_index": 0.4246226951536518,
+        "assortativity": 0.19607101790359704,
+        "opinion_entropy": 2.3450212011386875,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.2336493204111914,
+        "polarization_index": 0.42450966913820004,
+        "assortativity": 0.19591846141665933,
+        "opinion_entropy": 2.3427843160274007,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.23359389515764725,
+        "polarization_index": 0.42451306654683807,
+        "assortativity": 0.19581704074206685,
+        "opinion_entropy": 2.343487298505483,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.23358964975637203,
+        "polarization_index": 0.4244932159579689,
+        "assortativity": 0.19579115717889892,
+        "opinion_entropy": 2.347068635488394,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.23368741477182214,
+        "polarization_index": 0.42464307174484356,
+        "assortativity": 0.19605403239367966,
+        "opinion_entropy": 2.3450212011386875,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.23372907028112513,
+        "polarization_index": 0.42453262868968245,
+        "assortativity": 0.1963063208497588,
+        "opinion_entropy": 2.3427843160274007,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.2337508560603625,
+        "polarization_index": 0.4245209033278003,
+        "assortativity": 0.19642306630276868,
+        "opinion_entropy": 2.3455574860721806,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.2336655500190858,
+        "polarization_index": 0.4245734417613511,
+        "assortativity": 0.1959782992356707,
+        "opinion_entropy": 2.3427843160274007,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.23347251367567515,
+        "polarization_index": 0.42428637455540047,
+        "assortativity": 0.1955350448120541,
+        "opinion_entropy": 2.34137967408136,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.23354712449311318,
+        "polarization_index": 0.42458696735904183,
+        "assortativity": 0.19550191295316652,
+        "opinion_entropy": 2.3468143270687416,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.23358101212371124,
+        "polarization_index": 0.4245270979095689,
+        "assortativity": 0.19574810934989537,
+        "opinion_entropy": 2.3440411570239617,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.23358352927856893,
+        "polarization_index": 0.42461821445378206,
+        "assortativity": 0.19571923364122015,
+        "opinion_entropy": 2.3455574860721806,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.23370554470104146,
+        "polarization_index": 0.4246443084447246,
+        "assortativity": 0.19610753277404483,
+        "opinion_entropy": 2.3450212011386875,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.2337032816542268,
+        "polarization_index": 0.4245940609113511,
+        "assortativity": 0.1961413933262147,
+        "opinion_entropy": 2.3440411570239617,
+        "misinfo_prevalence": 0.0
+      }
+    ],
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.2278167523346511,
+        "polarization_index": 0.45545003859524114,
+        "assortativity": 0.07689664880402122,
+        "opinion_entropy": 2.2540897441067638,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.2234795069395417,
+        "polarization_index": 0.42745002067821747,
+        "assortativity": 0.11956411097355181,
+        "opinion_entropy": 2.192790830673497,
+        "misinfo_prevalence": 0.115
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.22380534098512736,
+        "polarization_index": 0.4273994077340457,
+        "assortativity": 0.12156935771115968,
+        "opinion_entropy": 2.192790830673497,
+        "misinfo_prevalence": 0.115
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.22370858513200503,
+        "polarization_index": 0.4272206956589454,
+        "assortativity": 0.12127765053588041,
+        "opinion_entropy": 2.188845600658159,
+        "misinfo_prevalence": 0.08
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.2235486794622283,
+        "polarization_index": 0.42694574871312524,
+        "assortativity": 0.12082813973308223,
+        "opinion_entropy": 2.192790830673497,
+        "misinfo_prevalence": 0.075
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.22367600121035555,
+        "polarization_index": 0.4271036163319883,
+        "assortativity": 0.12124476415802486,
+        "opinion_entropy": 2.189714757855858,
+        "misinfo_prevalence": 0.065
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.2236638555379735,
+        "polarization_index": 0.4271239654798575,
+        "assortativity": 0.121127795765941,
+        "opinion_entropy": 2.182524878123866,
+        "misinfo_prevalence": 0.04
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.22367201383307958,
+        "polarization_index": 0.42710272119769954,
+        "assortativity": 0.12120587576881814,
+        "opinion_entropy": 2.1874811309496485,
+        "misinfo_prevalence": 0.045
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.2237073239203643,
+        "polarization_index": 0.4270006908098638,
+        "assortativity": 0.1214236551209659,
+        "opinion_entropy": 2.192790830673497,
+        "misinfo_prevalence": 0.045
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.22369640964764892,
+        "polarization_index": 0.4270737179841882,
+        "assortativity": 0.12133107359359675,
+        "opinion_entropy": 2.192790830673497,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.22372276739430505,
+        "polarization_index": 0.427257101015056,
+        "assortativity": 0.12133864329896558,
+        "opinion_entropy": 2.1914263609649867,
+        "misinfo_prevalence": 0.025
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.2236412693656494,
+        "polarization_index": 0.4271051562481045,
+        "assortativity": 0.12105151548480701,
+        "opinion_entropy": 2.1914263609649867,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.2238284707133794,
+        "polarization_index": 0.42738640359358115,
+        "assortativity": 0.12154842824219167,
+        "opinion_entropy": 2.192790830673497,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.2237401964190932,
+        "polarization_index": 0.42733389721688303,
+        "assortativity": 0.12125855690171967,
+        "opinion_entropy": 2.1938114068997185,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.22362666970393213,
+        "polarization_index": 0.4271345665046374,
+        "assortativity": 0.12111147138685455,
+        "opinion_entropy": 2.187673486083172,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.22383177715339464,
+        "polarization_index": 0.42732757023549356,
+        "assortativity": 0.1216368525532269,
+        "opinion_entropy": 2.1938114068997185,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.22389037761599456,
+        "polarization_index": 0.42748875097551475,
+        "assortativity": 0.12176703666567845,
+        "opinion_entropy": 2.188845600658159,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.2236157484460125,
+        "polarization_index": 0.42709724495386203,
+        "assortativity": 0.12086608446359358,
+        "opinion_entropy": 2.188845600658159,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.22357333448385616,
+        "polarization_index": 0.42708231746581105,
+        "assortativity": 0.12079752000998836,
+        "opinion_entropy": 2.1898661768843803,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.2238523746034857,
+        "polarization_index": 0.4274549622326299,
+        "assortativity": 0.12163456348948001,
+        "opinion_entropy": 2.1938114068997185,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.2238306708520888,
+        "polarization_index": 0.42738445610616876,
+        "assortativity": 0.12168424450686487,
+        "opinion_entropy": 2.1874811309496485,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.22389938613342855,
+        "polarization_index": 0.4274964910388565,
+        "assortativity": 0.12184939670104933,
+        "opinion_entropy": 2.1914263609649867,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.22398494248371736,
+        "polarization_index": 0.42745670217947235,
+        "assortativity": 0.1222541386540717,
+        "opinion_entropy": 2.189714757855858,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.2237261540622195,
+        "polarization_index": 0.42713720917084286,
+        "assortativity": 0.1214088022422389,
+        "opinion_entropy": 2.1898661768843803,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.2236681037762439,
+        "polarization_index": 0.4270959342768974,
+        "assortativity": 0.12112325025996078,
+        "opinion_entropy": 2.18576952784052,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.2236638748627017,
+        "polarization_index": 0.4269733231549857,
+        "assortativity": 0.12128811101499382,
+        "opinion_entropy": 2.1874811309496485,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.2238635024384525,
+        "polarization_index": 0.427313582862912,
+        "assortativity": 0.12182853448124815,
+        "opinion_entropy": 2.1898661768843803,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.2238298854532131,
+        "polarization_index": 0.4273096921918275,
+        "assortativity": 0.1216867247434548,
+        "opinion_entropy": 2.1898661768843803,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.22374627342631406,
+        "polarization_index": 0.42718835926028265,
+        "assortativity": 0.12141680650761695,
+        "opinion_entropy": 2.188845600658159,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.22369398405936314,
+        "polarization_index": 0.4271650337291614,
+        "assortativity": 0.12122249836970603,
+        "opinion_entropy": 2.188845600658159,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.223715085890778,
+        "polarization_index": 0.4271559636530425,
+        "assortativity": 0.12132083271507167,
+        "opinion_entropy": 2.1901071663568783,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.2238450325780529,
+        "polarization_index": 0.4273260660909125,
+        "assortativity": 0.12165799106218418,
+        "opinion_entropy": 2.1898661768843803,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.2238408621027188,
+        "polarization_index": 0.42744727805527555,
+        "assortativity": 0.12159695997776317,
+        "opinion_entropy": 2.189714757855858,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.22373848372840877,
+        "polarization_index": 0.4272804518954841,
+        "assortativity": 0.12128735867877134,
+        "opinion_entropy": 2.1874811309496485,
+        "misinfo_prevalence": 0.0
+      }
+    ],
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.23075018097559952,
+        "polarization_index": 0.4388947780232163,
+        "assortativity": 0.16434390898697418,
+        "opinion_entropy": 2.3332331503034376,
+        "misinfo_prevalence": 0.065
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.23443307361305504,
+        "polarization_index": 0.4011251595393084,
+        "assortativity": 0.2660832008783614,
+        "opinion_entropy": 2.3552763446953184,
+        "misinfo_prevalence": 0.115
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.23544254511411836,
+        "polarization_index": 0.4006185458786566,
+        "assortativity": 0.2710534738323406,
+        "opinion_entropy": 2.366631944394787,
+        "misinfo_prevalence": 0.135
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.23554110460584746,
+        "polarization_index": 0.400604862129738,
+        "assortativity": 0.27171178724347533,
+        "opinion_entropy": 2.368125118107934,
+        "misinfo_prevalence": 0.115
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.23549795592687509,
+        "polarization_index": 0.40061053826623094,
+        "assortativity": 0.27158440151464097,
+        "opinion_entropy": 2.3639043736206573,
+        "misinfo_prevalence": 0.085
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.23555516012298391,
+        "polarization_index": 0.40057233395306663,
+        "assortativity": 0.27179795023469394,
+        "opinion_entropy": 2.3663820874059605,
+        "misinfo_prevalence": 0.08
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.23545626765396407,
+        "polarization_index": 0.4004492686688188,
+        "assortativity": 0.27142455881084904,
+        "opinion_entropy": 2.362344691979908,
+        "misinfo_prevalence": 0.06
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.23556107290768885,
+        "polarization_index": 0.4005033524284666,
+        "assortativity": 0.27190166844053987,
+        "opinion_entropy": 2.3701391819995496,
+        "misinfo_prevalence": 0.05
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.23563077210912872,
+        "polarization_index": 0.40061410161233285,
+        "assortativity": 0.27198611208980844,
+        "opinion_entropy": 2.369761599319873,
+        "misinfo_prevalence": 0.035
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.23553830098278986,
+        "polarization_index": 0.400460228779319,
+        "assortativity": 0.2719389132489196,
+        "opinion_entropy": 2.3645373652810893,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.2356918961191964,
+        "polarization_index": 0.40073100561479547,
+        "assortativity": 0.27214473039057796,
+        "opinion_entropy": 2.3647456061940217,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.23572179136221721,
+        "polarization_index": 0.40064727880176976,
+        "assortativity": 0.2722987754300672,
+        "opinion_entropy": 2.362548193241182,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.23562282200612705,
+        "polarization_index": 0.4005155128609974,
+        "assortativity": 0.27199359281094293,
+        "opinion_entropy": 2.369761599319873,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.23550176604963124,
+        "polarization_index": 0.4005802395901189,
+        "assortativity": 0.27154222266965783,
+        "opinion_entropy": 2.368125118107934,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.2352714730955819,
+        "polarization_index": 0.4004860857707534,
+        "assortativity": 0.27085669552604974,
+        "opinion_entropy": 2.3639811731918465,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.23545797068810206,
+        "polarization_index": 0.4005914675948954,
+        "assortativity": 0.2714172522078743,
+        "opinion_entropy": 2.367467679545925,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.23553747646633774,
+        "polarization_index": 0.400569828349946,
+        "assortativity": 0.27171898783833887,
+        "opinion_entropy": 2.3680238716351676,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.2356812793364692,
+        "polarization_index": 0.4005403243941391,
+        "assortativity": 0.2723297722962512,
+        "opinion_entropy": 2.3631043853304248,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.2355100548215168,
+        "polarization_index": 0.4006493272843963,
+        "assortativity": 0.27155329147755863,
+        "opinion_entropy": 2.36572420389382,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.23549707838207312,
+        "polarization_index": 0.4004877362059135,
+        "assortativity": 0.2716861419779628,
+        "opinion_entropy": 2.3663052878347712,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.2356413964395162,
+        "polarization_index": 0.4004888307724159,
+        "assortativity": 0.27209742300415235,
+        "opinion_entropy": 2.368125118107934,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.23556294825712493,
+        "polarization_index": 0.4005231416970513,
+        "assortativity": 0.27193002552644446,
+        "opinion_entropy": 2.3631043853304248,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.2353938818047557,
+        "polarization_index": 0.40039056145932006,
+        "assortativity": 0.27137951541205513,
+        "opinion_entropy": 2.3629008840691506,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.23530662343882383,
+        "polarization_index": 0.4003648402468981,
+        "assortativity": 0.2711262909241805,
+        "opinion_entropy": 2.3629008840691506,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.23545779199695183,
+        "polarization_index": 0.40056808555321505,
+        "assortativity": 0.27149447642237845,
+        "opinion_entropy": 2.362344691979908,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.2355356984068799,
+        "polarization_index": 0.40051496234158235,
+        "assortativity": 0.2718519330025155,
+        "opinion_entropy": 2.366938279495203,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.23573669057032817,
+        "polarization_index": 0.40063379180977693,
+        "assortativity": 0.27243200170273135,
+        "opinion_entropy": 2.3639811731918465,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.2354118140501358,
+        "polarization_index": 0.40051960031242656,
+        "assortativity": 0.27129224971200866,
+        "opinion_entropy": 2.3611573582685947,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.23544249809721496,
+        "polarization_index": 0.4005930922991729,
+        "assortativity": 0.2713763734922153,
+        "opinion_entropy": 2.3645373652810893,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.23554029951570335,
+        "polarization_index": 0.4005600433163082,
+        "assortativity": 0.2716850920956208,
+        "opinion_entropy": 2.369761599319873,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.23544256964090482,
+        "polarization_index": 0.40031750633594354,
+        "assortativity": 0.2717426189153385,
+        "opinion_entropy": 2.3687068678395082,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.23554662781007743,
+        "polarization_index": 0.40060206302454754,
+        "assortativity": 0.27172374672778593,
+        "opinion_entropy": 2.365066765331811,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.23544275618487792,
+        "polarization_index": 0.4005038657168113,
+        "assortativity": 0.27144258870882854,
+        "opinion_entropy": 2.3639811731918465,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.23552886733819853,
+        "polarization_index": 0.4005372993361961,
+        "assortativity": 0.2717763791328353,
+        "opinion_entropy": 2.3639811731918465,
+        "misinfo_prevalence": 0.0
+      }
+    ],
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.2282516599266438,
+        "polarization_index": 0.41722224909092104,
+        "assortativity": 0.23007126473462855,
+        "opinion_entropy": 2.2794786166260996,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.24190810018209086,
+        "polarization_index": 0.3829204969976972,
+        "assortativity": 0.36930211878973196,
+        "opinion_entropy": 2.3596139666205107,
+        "misinfo_prevalence": 0.09
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.24392618096787644,
+        "polarization_index": 0.38214298422447884,
+        "assortativity": 0.37707723308894026,
+        "opinion_entropy": 2.3874990324894783,
+        "misinfo_prevalence": 0.095
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.24443694955954956,
+        "polarization_index": 0.3823284500279285,
+        "assortativity": 0.3785947093622474,
+        "opinion_entropy": 2.39400500836662,
+        "misinfo_prevalence": 0.11
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.24449309907033936,
+        "polarization_index": 0.38209674219463174,
+        "assortativity": 0.3790043192401893,
+        "opinion_entropy": 2.382428674912307,
+        "misinfo_prevalence": 0.08
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.24438169400881107,
+        "polarization_index": 0.3822339286932609,
+        "assortativity": 0.378522816001459,
+        "opinion_entropy": 2.382428674912307,
+        "misinfo_prevalence": 0.08
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.24451924445806733,
+        "polarization_index": 0.3822468114611041,
+        "assortativity": 0.3788588895446088,
+        "opinion_entropy": 2.386175255046619,
+        "misinfo_prevalence": 0.07
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.2445878182018088,
+        "polarization_index": 0.3823420296434547,
+        "assortativity": 0.37906492943416986,
+        "opinion_entropy": 2.3874990324894783,
+        "misinfo_prevalence": 0.055
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.24446915239382982,
+        "polarization_index": 0.3823807164479443,
+        "assortativity": 0.3786482489010494,
+        "opinion_entropy": 2.4005898007061908,
+        "misinfo_prevalence": 0.04
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.24446961924877456,
+        "polarization_index": 0.38221494449681714,
+        "assortativity": 0.3787513933767332,
+        "opinion_entropy": 2.3988516306667385,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.2445702506827697,
+        "polarization_index": 0.38237219114556464,
+        "assortativity": 0.37894587758250414,
+        "opinion_entropy": 2.3987070528378,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.24455769462023244,
+        "polarization_index": 0.3822938942011656,
+        "assortativity": 0.37898278720220846,
+        "opinion_entropy": 2.3922668383271675,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.24435600914227273,
+        "polarization_index": 0.3821896579326803,
+        "assortativity": 0.37845967393361923,
+        "opinion_entropy": 2.3864695425468994,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.24467215779155335,
+        "polarization_index": 0.3825062576550963,
+        "assortativity": 0.3792279359521268,
+        "opinion_entropy": 2.392748167370059,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.2443623225089572,
+        "polarization_index": 0.3820647072494008,
+        "assortativity": 0.3785307518827317,
+        "opinion_entropy": 2.382428674912307,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.2444288199369592,
+        "polarization_index": 0.3822191019773107,
+        "assortativity": 0.3785976638905474,
+        "opinion_entropy": 2.3827413786813865,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.2445092984762131,
+        "polarization_index": 0.3824514132992162,
+        "assortativity": 0.37867254967811376,
+        "opinion_entropy": 2.390258428232308,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.24439669995225244,
+        "polarization_index": 0.3823036326224381,
+        "assortativity": 0.3784210938445504,
+        "opinion_entropy": 2.384918414050058,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.24465941596557883,
+        "polarization_index": 0.3821769947388449,
+        "assortativity": 0.3794398277125825,
+        "opinion_entropy": 2.392748167370059,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.2446593803512668,
+        "polarization_index": 0.38230876088773935,
+        "assortativity": 0.3792923770512662,
+        "opinion_entropy": 2.39933295970963,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.24467172130135262,
+        "polarization_index": 0.38221485580230036,
+        "assortativity": 0.37938013710409035,
+        "opinion_entropy": 2.392748167370059,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.2446118021884912,
+        "polarization_index": 0.38227481771354177,
+        "assortativity": 0.37915369774647484,
+        "opinion_entropy": 2.392748167370059,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.24460390534719617,
+        "polarization_index": 0.38223849454844017,
+        "assortativity": 0.3791987444804993,
+        "opinion_entropy": 2.3842925071782277,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.24455735134251946,
+        "polarization_index": 0.3822279136228749,
+        "assortativity": 0.379059904659373,
+        "opinion_entropy": 2.392748167370059,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.24449423315001625,
+        "polarization_index": 0.38212152780561764,
+        "assortativity": 0.37893557055480886,
+        "opinion_entropy": 2.3827210010972184,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.24444974697494876,
+        "polarization_index": 0.3823691226026869,
+        "assortativity": 0.378657463819951,
+        "opinion_entropy": 2.3953287858094794,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.24472386115904207,
+        "polarization_index": 0.38237626938735714,
+        "assortativity": 0.3795683850244784,
+        "opinion_entropy": 2.3922668383271675,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.24450800966811864,
+        "polarization_index": 0.3824550697498171,
+        "assortativity": 0.37866725004673185,
+        "opinion_entropy": 2.3874990324894783,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.24437182604302937,
+        "polarization_index": 0.3820761518722954,
+        "assortativity": 0.3786172206200016,
+        "opinion_entropy": 2.3869487896294816,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.24452923099189533,
+        "polarization_index": 0.38224395454340354,
+        "assortativity": 0.3790241632080867,
+        "opinion_entropy": 2.390258428232308,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.2443897860434731,
+        "polarization_index": 0.38217939392146405,
+        "assortativity": 0.37851579379449884,
+        "opinion_entropy": 2.3843778598933247,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.24449897236296764,
+        "polarization_index": 0.3825049604772336,
+        "assortativity": 0.378710961086492,
+        "opinion_entropy": 2.4008840882064715,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.24460254262927436,
+        "polarization_index": 0.3822865096604553,
+        "assortativity": 0.37916418620280284,
+        "opinion_entropy": 2.3851507482642105,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.24464666035817753,
+        "polarization_index": 0.3824781439098656,
+        "assortativity": 0.37902869802748634,
+        "opinion_entropy": 2.390258428232308,
+        "misinfo_prevalence": 0.0
+      }
+    ],
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.2286414848158304,
+        "polarization_index": 0.4454735347918873,
+        "assortativity": 0.11412045678188809,
+        "opinion_entropy": 2.2574008653744353,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.22583892550175333,
+        "polarization_index": 0.41669419844335237,
+        "assortativity": 0.1578060224414378,
+        "opinion_entropy": 2.2053203805566532,
+        "misinfo_prevalence": 0.07
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.226754121083857,
+        "polarization_index": 0.4167236979450891,
+        "assortativity": 0.16190045595797561,
+        "opinion_entropy": 2.235035028125317,
+        "misinfo_prevalence": 0.1
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.22688404784711635,
+        "polarization_index": 0.416767041973982,
+        "assortativity": 0.16256012717769946,
+        "opinion_entropy": 2.242721138625487,
+        "misinfo_prevalence": 0.1
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.22685821327072625,
+        "polarization_index": 0.4165297359183375,
+        "assortativity": 0.16266710380014168,
+        "opinion_entropy": 2.2407025913570293,
+        "misinfo_prevalence": 0.095
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.22686199089889503,
+        "polarization_index": 0.4166008558175625,
+        "assortativity": 0.1625337277505089,
+        "opinion_entropy": 2.24238515414735,
+        "misinfo_prevalence": 0.07
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.2269256853570879,
+        "polarization_index": 0.41664626286201306,
+        "assortativity": 0.16275542262932727,
+        "opinion_entropy": 2.2386364020714713,
+        "misinfo_prevalence": 0.06
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.22692072009865194,
+        "polarization_index": 0.41658398749450554,
+        "assortativity": 0.16275402583348278,
+        "opinion_entropy": 2.236111654219884,
+        "misinfo_prevalence": 0.04
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.22697098247972788,
+        "polarization_index": 0.41666078493992315,
+        "assortativity": 0.16289419578121056,
+        "opinion_entropy": 2.239414894962484,
+        "misinfo_prevalence": 0.04
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.22700362534470003,
+        "polarization_index": 0.41667103290968227,
+        "assortativity": 0.16313741182457028,
+        "opinion_entropy": 2.243349793260959,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.22696963140703125,
+        "polarization_index": 0.41667238246964705,
+        "assortativity": 0.16294304729670153,
+        "opinion_entropy": 2.2386364020714713,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.2269776849016474,
+        "polarization_index": 0.41647314762635645,
+        "assortativity": 0.1631728179007672,
+        "opinion_entropy": 2.2389742386361178,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.2268300369365615,
+        "polarization_index": 0.41642080515729346,
+        "assortativity": 0.16259282055577814,
+        "opinion_entropy": 2.2303600666814454,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.2268317576390414,
+        "polarization_index": 0.4163824813636423,
+        "assortativity": 0.16261852431998144,
+        "opinion_entropy": 2.2400156971203744,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.22689318366541633,
+        "polarization_index": 0.4163697632447267,
+        "assortativity": 0.16295561798173605,
+        "opinion_entropy": 2.2373684952164443,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.22687037912578975,
+        "polarization_index": 0.41650806440883364,
+        "assortativity": 0.16261598791537193,
+        "opinion_entropy": 2.2400156971203744,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.22689953202488916,
+        "polarization_index": 0.41650224194712815,
+        "assortativity": 0.1628091135106295,
+        "opinion_entropy": 2.240310051145435,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.22688409871691406,
+        "polarization_index": 0.41652793329067334,
+        "assortativity": 0.16268075801891493,
+        "opinion_entropy": 2.2427489911030687,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.22692450099815598,
+        "polarization_index": 0.41639860174790044,
+        "assortativity": 0.16301990391143392,
+        "opinion_entropy": 2.2427489911030687,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.22683006083309604,
+        "polarization_index": 0.4164032742909821,
+        "assortativity": 0.16260695018743568,
+        "opinion_entropy": 2.2360468446448762,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.22681352121738818,
+        "polarization_index": 0.4164348760991967,
+        "assortativity": 0.16251794015538382,
+        "opinion_entropy": 2.241696390142419,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.2269242653222396,
+        "polarization_index": 0.4164959153865271,
+        "assortativity": 0.16287190533612933,
+        "opinion_entropy": 2.2400156971203744,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.2269769699597646,
+        "polarization_index": 0.41660539797697765,
+        "assortativity": 0.16296745281047148,
+        "opinion_entropy": 2.24238515414735,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.226956286008507,
+        "polarization_index": 0.41649249028828456,
+        "assortativity": 0.1630391187317754,
+        "opinion_entropy": 2.232743278379085,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.22688484789209284,
+        "polarization_index": 0.41651368430811936,
+        "assortativity": 0.16271521593308247,
+        "opinion_entropy": 2.2390510580067655,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.2269411855194505,
+        "polarization_index": 0.41652511278878834,
+        "assortativity": 0.16289022430322858,
+        "opinion_entropy": 2.24238515414735,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.2268995659933278,
+        "polarization_index": 0.416504587616952,
+        "assortativity": 0.1627325010826263,
+        "opinion_entropy": 2.244052775739042,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.22692316494179046,
+        "polarization_index": 0.4164062480439074,
+        "assortativity": 0.16294192530334192,
+        "opinion_entropy": 2.2321030904685832,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.22699961260716767,
+        "polarization_index": 0.4165593858275703,
+        "assortativity": 0.1631162957229393,
+        "opinion_entropy": 2.241066428312748,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.2268199732376067,
+        "polarization_index": 0.41642515612095127,
+        "assortativity": 0.16239584094423715,
+        "opinion_entropy": 2.240310051145435,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.22693720763451464,
+        "polarization_index": 0.4165841115309391,
+        "assortativity": 0.16288634481651856,
+        "opinion_entropy": 2.2394457503604683,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.22689163943333884,
+        "polarization_index": 0.41647876117022614,
+        "assortativity": 0.16277688489341377,
+        "opinion_entropy": 2.239414894962484,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.2269615711070481,
+        "polarization_index": 0.4167740195419043,
+        "assortativity": 0.16268665052904135,
+        "opinion_entropy": 2.238550594177517,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.22700187602950186,
+        "polarization_index": 0.41652851501443805,
+        "assortativity": 0.1631528818178021,
+        "opinion_entropy": 2.2390510580067655,
+        "misinfo_prevalence": 0.0
+      }
+    ],
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.2221754665699252,
+        "polarization_index": 0.4463117613419165,
+        "assortativity": 0.07131934654237165,
+        "opinion_entropy": 2.17810848639252,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.2214115771106542,
+        "polarization_index": 0.41583618768641245,
+        "assortativity": 0.1280055165749614,
+        "opinion_entropy": 2.1618825193672726,
+        "misinfo_prevalence": 0.07
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.22193638068663424,
+        "polarization_index": 0.4153512643258114,
+        "assortativity": 0.13125803115622497,
+        "opinion_entropy": 2.1690067798515473,
+        "misinfo_prevalence": 0.095
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.2220517430499787,
+        "polarization_index": 0.41536999245704487,
+        "assortativity": 0.13174078586501006,
+        "opinion_entropy": 2.1730301306493276,
+        "misinfo_prevalence": 0.09
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.22213283088227634,
+        "polarization_index": 0.4153953243092772,
+        "assortativity": 0.13210151192154848,
+        "opinion_entropy": 2.1770416907001366,
+        "misinfo_prevalence": 0.095
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.22218577704470646,
+        "polarization_index": 0.415229314056033,
+        "assortativity": 0.1325265882696797,
+        "opinion_entropy": 2.174940044493631,
+        "misinfo_prevalence": 0.085
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.22224136273886777,
+        "polarization_index": 0.41543444882248864,
+        "assortativity": 0.13254841167070408,
+        "opinion_entropy": 2.17426840444518,
+        "misinfo_prevalence": 0.065
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.22214685054182468,
+        "polarization_index": 0.4152936190493361,
+        "assortativity": 0.13227821629129036,
+        "opinion_entropy": 2.1765487376441954,
+        "misinfo_prevalence": 0.065
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.22227255548244745,
+        "polarization_index": 0.41540615822136945,
+        "assortativity": 0.1327295974441629,
+        "opinion_entropy": 2.167218075748732,
+        "misinfo_prevalence": 0.065
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.22227541118792246,
+        "polarization_index": 0.41538380857212426,
+        "assortativity": 0.1327178303011231,
+        "opinion_entropy": 2.1755204462166997,
+        "misinfo_prevalence": 0.04
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.22233136501468237,
+        "polarization_index": 0.41541971977792386,
+        "assortativity": 0.13291530140446306,
+        "opinion_entropy": 2.174940044493631,
+        "misinfo_prevalence": 0.03
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.22223434755571694,
+        "polarization_index": 0.415477545202214,
+        "assortativity": 0.1324695750041372,
+        "opinion_entropy": 2.170689266313057,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.222200388744902,
+        "polarization_index": 0.41528670546582747,
+        "assortativity": 0.1324588450003335,
+        "opinion_entropy": 2.1755204462166997,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.22224639915951866,
+        "polarization_index": 0.41536078829999484,
+        "assortativity": 0.13266380966558106,
+        "opinion_entropy": 2.1778007794157146,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.2222319715609744,
+        "polarization_index": 0.4153098716488164,
+        "assortativity": 0.13262962837156478,
+        "opinion_entropy": 2.172107369247352,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.222233448790205,
+        "polarization_index": 0.41534393505569606,
+        "assortativity": 0.1326124154729209,
+        "opinion_entropy": 2.174940044493631,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.22225405940277032,
+        "polarization_index": 0.41534360284994754,
+        "assortativity": 0.13271764279403814,
+        "opinion_entropy": 2.1746224507454923,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.22237787347697313,
+        "polarization_index": 0.41547752985715947,
+        "assortativity": 0.13311797324639366,
+        "opinion_entropy": 2.1778007794157146,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.22211403390622245,
+        "polarization_index": 0.4153389458852015,
+        "assortativity": 0.13202025983056104,
+        "opinion_entropy": 2.167218075748732,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.2222274407247024,
+        "polarization_index": 0.415450287304022,
+        "assortativity": 0.13251306535177362,
+        "opinion_entropy": 2.177957054856969,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.2222124690265461,
+        "polarization_index": 0.41538793097839416,
+        "assortativity": 0.13239594903822113,
+        "opinion_entropy": 2.1684701175202514,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.2221440655903621,
+        "polarization_index": 0.4153788143135286,
+        "assortativity": 0.13212676231691456,
+        "opinion_entropy": 2.1697739021562246,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.22224616005882616,
+        "polarization_index": 0.4154336501163665,
+        "assortativity": 0.13258170954893714,
+        "opinion_entropy": 2.177957054856969,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.22214331432040577,
+        "polarization_index": 0.4153405063602728,
+        "assortativity": 0.13218818089321754,
+        "opinion_entropy": 2.1773316473188107,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.22221648793769688,
+        "polarization_index": 0.41549696649457346,
+        "assortativity": 0.13241752177716354,
+        "opinion_entropy": 2.175676721657954,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.22218875256929393,
+        "polarization_index": 0.41527093487127764,
+        "assortativity": 0.1324275353926085,
+        "opinion_entropy": 2.1684701175202514,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.22224857167414455,
+        "polarization_index": 0.41549014193980527,
+        "assortativity": 0.13250242783232996,
+        "opinion_entropy": 2.1691380725147305,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.2222448859521706,
+        "polarization_index": 0.4156210480249931,
+        "assortativity": 0.1323295403335639,
+        "opinion_entropy": 2.170091495904363,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.22230907312842293,
+        "polarization_index": 0.41550790093203205,
+        "assortativity": 0.13273356257362137,
+        "opinion_entropy": 2.1796651144099384,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.2221572722234773,
+        "polarization_index": 0.4154270035370649,
+        "assortativity": 0.1321979726272056,
+        "opinion_entropy": 2.170532990871802,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.22215994010487095,
+        "polarization_index": 0.41541986625658084,
+        "assortativity": 0.13224107746957484,
+        "opinion_entropy": 2.1781787777915196,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.22218475946924493,
+        "polarization_index": 0.41541408753825826,
+        "assortativity": 0.13238097197263743,
+        "opinion_entropy": 2.177384781210923,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.22223223671614023,
+        "polarization_index": 0.4153310197845231,
+        "assortativity": 0.13259484090729634,
+        "opinion_entropy": 2.1745535618388128,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.22220814709385667,
+        "polarization_index": 0.4154410923680536,
+        "assortativity": 0.1323761642474703,
+        "opinion_entropy": 2.176622607283952,
+        "misinfo_prevalence": 0.0
+      }
+    ],
+    [
+      {
+        "tick": 0,
+        "opinion_variance": 0.22696192618919844,
+        "polarization_index": 0.45467607195497434,
+        "assortativity": 0.07420566669841917,
+        "opinion_entropy": 2.245978151810166,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 6,
+        "opinion_variance": 0.2227812316615434,
+        "polarization_index": 0.42397686682119,
+        "assortativity": 0.12484564172441932,
+        "opinion_entropy": 2.153627863828672,
+        "misinfo_prevalence": 0.09
+      },
+      {
+        "tick": 12,
+        "opinion_variance": 0.2233595177549423,
+        "polarization_index": 0.42351224923488706,
+        "assortativity": 0.12841258959718627,
+        "opinion_entropy": 2.1650920015385307,
+        "misinfo_prevalence": 0.12
+      },
+      {
+        "tick": 18,
+        "opinion_variance": 0.22354351395611957,
+        "polarization_index": 0.4236994537192469,
+        "assortativity": 0.12898742419310036,
+        "opinion_entropy": 2.1611974135967973,
+        "misinfo_prevalence": 0.08
+      },
+      {
+        "tick": 24,
+        "opinion_variance": 0.22357053720160558,
+        "polarization_index": 0.42342766313463753,
+        "assortativity": 0.12932462598427302,
+        "opinion_entropy": 2.158511427911967,
+        "misinfo_prevalence": 0.05
+      },
+      {
+        "tick": 30,
+        "opinion_variance": 0.22351068990396375,
+        "polarization_index": 0.4233536614762344,
+        "assortativity": 0.12909523267696432,
+        "opinion_entropy": 2.1528593362868196,
+        "misinfo_prevalence": 0.04
+      },
+      {
+        "tick": 36,
+        "opinion_variance": 0.22350087624287446,
+        "polarization_index": 0.42327546234409746,
+        "assortativity": 0.12905789145807522,
+        "opinion_entropy": 2.150522404587889,
+        "misinfo_prevalence": 0.04
+      },
+      {
+        "tick": 42,
+        "opinion_variance": 0.22337454009324667,
+        "polarization_index": 0.4232937315653078,
+        "assortativity": 0.12852707299271898,
+        "opinion_entropy": 2.152199132408514,
+        "misinfo_prevalence": 0.025
+      },
+      {
+        "tick": 48,
+        "opinion_variance": 0.22347020211101898,
+        "polarization_index": 0.42332925369641816,
+        "assortativity": 0.1289268100188082,
+        "opinion_entropy": 2.150522404587889,
+        "misinfo_prevalence": 0.02
+      },
+      {
+        "tick": 54,
+        "opinion_variance": 0.2235079244173459,
+        "polarization_index": 0.42350476762101236,
+        "assortativity": 0.12902026358681032,
+        "opinion_entropy": 2.155900039976559,
+        "misinfo_prevalence": 0.015
+      },
+      {
+        "tick": 60,
+        "opinion_variance": 0.223574005752841,
+        "polarization_index": 0.42348972784746,
+        "assortativity": 0.1292441056375926,
+        "opinion_entropy": 2.155900039976559,
+        "misinfo_prevalence": 0.01
+      },
+      {
+        "tick": 66,
+        "opinion_variance": 0.22340043240285745,
+        "polarization_index": 0.4235864414177176,
+        "assortativity": 0.1282974365471582,
+        "opinion_entropy": 2.1528558716790167,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 72,
+        "opinion_variance": 0.2234146303222245,
+        "polarization_index": 0.42340988342585945,
+        "assortativity": 0.1285859784045548,
+        "opinion_entropy": 2.1501698859941865,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 78,
+        "opinion_variance": 0.22336530661590537,
+        "polarization_index": 0.4233556279213384,
+        "assortativity": 0.12839249934830138,
+        "opinion_entropy": 2.1635343452957283,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 84,
+        "opinion_variance": 0.22346363691884924,
+        "polarization_index": 0.4235117964482569,
+        "assortativity": 0.12873310634127932,
+        "opinion_entropy": 2.1513842067540336,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 90,
+        "opinion_variance": 0.22343154301132073,
+        "polarization_index": 0.4234076486111958,
+        "assortativity": 0.12866548483278636,
+        "opinion_entropy": 2.1520676255831095,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 96,
+        "opinion_variance": 0.22350776696321561,
+        "polarization_index": 0.4235901421275382,
+        "assortativity": 0.12891782478583835,
+        "opinion_entropy": 2.1520676255831095,
+        "misinfo_prevalence": 0.005
+      },
+      {
+        "tick": 102,
+        "opinion_variance": 0.2234394521474519,
+        "polarization_index": 0.4234327554915261,
+        "assortativity": 0.12874667038261517,
+        "opinion_entropy": 2.158511427911967,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 108,
+        "opinion_variance": 0.22340927701643323,
+        "polarization_index": 0.4232789959962676,
+        "assortativity": 0.1287674334934752,
+        "opinion_entropy": 2.1520676255831095,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 114,
+        "opinion_variance": 0.2234041924284216,
+        "polarization_index": 0.42342383694771357,
+        "assortativity": 0.12852311036009414,
+        "opinion_entropy": 2.1528558716790167,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 120,
+        "opinion_variance": 0.22346905378044307,
+        "polarization_index": 0.4234442994572463,
+        "assortativity": 0.12888880003642045,
+        "opinion_entropy": 2.155900039976559,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 126,
+        "opinion_variance": 0.22336001484597104,
+        "polarization_index": 0.4231460568729453,
+        "assortativity": 0.1285413892231138,
+        "opinion_entropy": 2.1528558716790167,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 132,
+        "opinion_variance": 0.22350420082039116,
+        "polarization_index": 0.4233776033740459,
+        "assortativity": 0.12904991163350316,
+        "opinion_entropy": 2.1611974135967973,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 138,
+        "opinion_variance": 0.22353832302847756,
+        "polarization_index": 0.42344132475940216,
+        "assortativity": 0.12914010812695784,
+        "opinion_entropy": 2.1611974135967973,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 144,
+        "opinion_variance": 0.22349279498132568,
+        "polarization_index": 0.42343248076872764,
+        "assortativity": 0.12896068751218068,
+        "opinion_entropy": 2.158511427911967,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 150,
+        "opinion_variance": 0.22347812513258258,
+        "polarization_index": 0.4235736182709863,
+        "assortativity": 0.12875680513997897,
+        "opinion_entropy": 2.1501698859941865,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 156,
+        "opinion_variance": 0.2234454276216312,
+        "polarization_index": 0.4233058636964997,
+        "assortativity": 0.12881978778286354,
+        "opinion_entropy": 2.158511427911967,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 162,
+        "opinion_variance": 0.22341758829494796,
+        "polarization_index": 0.42334539886396105,
+        "assortativity": 0.1286647336560874,
+        "opinion_entropy": 2.161706924789173,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 168,
+        "opinion_variance": 0.22340560755800168,
+        "polarization_index": 0.42328392173731333,
+        "assortativity": 0.12872017053323118,
+        "opinion_entropy": 2.1450583334230613,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 174,
+        "opinion_variance": 0.22343252159460836,
+        "polarization_index": 0.42336876790907096,
+        "assortativity": 0.1287208789804051,
+        "opinion_entropy": 2.155900039976559,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 180,
+        "opinion_variance": 0.22341225534276896,
+        "polarization_index": 0.42331016409434435,
+        "assortativity": 0.12876447681876174,
+        "opinion_entropy": 2.1611974135967973,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 186,
+        "opinion_variance": 0.2234802689261659,
+        "polarization_index": 0.4234864678950101,
+        "assortativity": 0.12891311861018742,
+        "opinion_entropy": 2.1495131467236837,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 192,
+        "opinion_variance": 0.2235042454138125,
+        "polarization_index": 0.4235281930936172,
+        "assortativity": 0.1289376742551141,
+        "opinion_entropy": 2.155900039976559,
+        "misinfo_prevalence": 0.0
+      },
+      {
+        "tick": 198,
+        "opinion_variance": 0.22344527054939925,
+        "polarization_index": 0.4234076608042984,
+        "assortativity": 0.1286985723243404,
+        "opinion_entropy": 2.158511427911967,
+        "misinfo_prevalence": 0.0
+      }
+    ]
+  ]
+}
