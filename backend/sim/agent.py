@@ -16,7 +16,15 @@ from typing import Literal
 import numpy as np
 
 
-AgentType = Literal["stubborn", "flexible", "zealot", "bot", "hk", "contrarian"]
+AgentType = Literal[
+    "stubborn",
+    "flexible",
+    "zealot",
+    "bot",
+    "hk",
+    "contrarian",
+    "influencer",
+]
 SIRState = Literal["S", "I", "R"]
 
 
@@ -37,6 +45,7 @@ MEDIA_LITERACY_MIN = 0.2
 MEDIA_LITERACY_MAX = 0.8
 HK_CONFIDENCE_BOUND_DEFAULT = 0.3
 CONTRARIAN_PROB_DEFAULT = 0.3
+INFLUENCE_WEIGHT_MULTIPLIER_DEFAULT = 2.0
 BIMODAL_PEAK = 0.7
 BIMODAL_STD = 0.15
 
@@ -100,6 +109,7 @@ class Agent:
     media_literacy: float
     confidence_bound: float
     contrarian_prob: float
+    influence_weight_multiplier: float
     suspicion_score: float
     is_active: bool
     sir_state: SIRState
@@ -123,7 +133,15 @@ class Agent:
         _assert_probability("misinfo_rate", self.misinfo_rate)
 
         assert self.id >= 0, f"id must be non-negative, got {self.id}"
-        assert self.agent_type in {"stubborn", "flexible", "zealot", "bot", "hk", "contrarian"}
+        assert self.agent_type in {
+            "stubborn",
+            "flexible",
+            "zealot",
+            "bot",
+            "hk",
+            "contrarian",
+            "influencer",
+        }
         assert self.sir_state in {"S", "I", "R"}, f"invalid sir_state: {self.sir_state}"
 
         if not self.opinion_history:
@@ -255,6 +273,11 @@ class ContrarianAgent(Agent):
         return _clamp_opinion(updated)
 
 
+@dataclass(slots=True)
+class InfluencerAgent(StubbornAgent):
+    """Influencer agent with standard FJ update and boosted influence weight."""
+
+
 def sample_initial_opinion(
     rng: np.random.Generator,
     distribution: Literal["uniform", "bimodal"] = "uniform",
@@ -300,6 +323,8 @@ def create_agent(
 
     contrarian_prob = 0.0
 
+    influence_weight_multiplier = 1.0
+
     if agent_type in {"zealot", "bot"}:
         extreme = 1.0 if float(rng.random()) >= 0.5 else -1.0
         opinion = extreme
@@ -309,6 +334,8 @@ def create_agent(
         stubbornness = 0.0
     elif agent_type == "contrarian":
         contrarian_prob = CONTRARIAN_PROB_DEFAULT
+    elif agent_type == "influencer":
+        influence_weight_multiplier = INFLUENCE_WEIGHT_MULTIPLIER_DEFAULT
 
     if agent_type == "bot":
         misinfo_rate = bot_misinfo_rate
@@ -327,6 +354,7 @@ def create_agent(
         media_literacy=float(rng.uniform(MEDIA_LITERACY_MIN, MEDIA_LITERACY_MAX)),
         confidence_bound=HK_CONFIDENCE_BOUND_DEFAULT,
         contrarian_prob=contrarian_prob,
+        influence_weight_multiplier=influence_weight_multiplier,
         suspicion_score=0.0,
         is_active=True,
         sir_state="S",
@@ -340,6 +368,8 @@ def create_agent(
         return HKAgent(**common_kwargs)
     if agent_type == "contrarian":
         return ContrarianAgent(**common_kwargs)
+    if agent_type == "influencer":
+        return InfluencerAgent(**common_kwargs)
     return StubbornAgent(**common_kwargs)
 
 
@@ -361,7 +391,15 @@ def initialize_agents(
 
     mix_total = 0.0
     for agent_type, fraction in agent_mix.items():
-        if agent_type not in {"stubborn", "flexible", "zealot", "bot", "hk", "contrarian"}:
+        if agent_type not in {
+            "stubborn",
+            "flexible",
+            "zealot",
+            "bot",
+            "hk",
+            "contrarian",
+            "influencer",
+        }:
             raise ValueError(f"Unsupported agent type in mix: {agent_type}")
         _assert_probability(f"agent_mix[{agent_type}]", fraction)
         mix_total += fraction
@@ -413,6 +451,7 @@ __all__ = [
     "ContrarianAgent",
     "FlexibleAgent",
     "HKAgent",
+    "InfluencerAgent",
     "SIRState",
     "StubbornAgent",
     "create_agent",

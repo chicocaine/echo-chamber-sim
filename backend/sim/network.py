@@ -9,6 +9,7 @@ MVP Step 4 scope:
 
 from __future__ import annotations
 
+import random
 from typing import Any
 
 import networkx as nx
@@ -19,6 +20,7 @@ from .agent import Agent
 DEFAULT_N = 200
 DEFAULT_AVG_DEGREE = 16
 DEFAULT_REWIRE_PROB = 0.1
+INFLUENCER_DEGREE_MULTIPLIER = 3
 
 
 def _validate_graph_params(n_agents: int, avg_degree: int, rewire_prob: float) -> None:
@@ -47,7 +49,29 @@ def assign_agents_to_graph(G: nx.DiGraph, agents: list[Agent]) -> None:
         G.nodes[node_id]["agent"] = agents[node_id]
 
 
-def initialize_edge_weights(G: nx.DiGraph) -> None:
+def compute_edge_weights(G: nx.DiGraph, agent_id: int, agents: list[Agent]) -> dict[int, float]:
+    """Compute normalized incoming edge weights for one agent.
+
+    Influence weights are proportional to each predecessor's
+    ``influence_weight_multiplier`` and normalized to sum to 1.0.
+    """
+    predecessors = get_predecessors(G, agent_id)
+    if not predecessors:
+        return {}
+
+    raw = {
+        source_id: float(agents[source_id].influence_weight_multiplier)
+        for source_id in predecessors
+    }
+    total = sum(raw.values())
+    if total <= 0.0:
+        uniform = 1.0 / len(predecessors)
+        return {source_id: uniform for source_id in predecessors}
+
+    return {source_id: weight / total for source_id, weight in raw.items()}
+
+
+def initialize_edge_weights(G: nx.DiGraph, agents: list[Agent] | None = None) -> None:
     """Initialize incoming influence weights as uniform 1 / in_degree(i).
 
     For every edge (j -> i), ``G[j][i]['weight']`` is the influence weight that node i
@@ -58,9 +82,15 @@ def initialize_edge_weights(G: nx.DiGraph) -> None:
         if not predecessors:
             continue
 
-        uniform_weight = 1.0 / len(predecessors)
-        for source_id in predecessors:
-            G[source_id][agent_id]["weight"] = uniform_weight
+        if agents is None:
+            uniform_weight = 1.0 / len(predecessors)
+            for source_id in predecessors:
+                G[source_id][agent_id]["weight"] = uniform_weight
+            continue
+
+        weights = compute_edge_weights(G, agent_id, agents)
+        for source_id, weight in weights.items():
+            G[source_id][agent_id]["weight"] = weight
 
 
 def build_network(
@@ -86,7 +116,13 @@ def build_network(
     G = nx.DiGraph(undirected_graph)
 
     assign_agents_to_graph(G, agents)
-    initialize_edge_weights(G)
+    _rewire_influencer_hubs(
+        G,
+        agents,
+        avg_degree=avg_degree,
+        seed=seed,
+    )
+    initialize_edge_weights(G, agents)
     return G
 
 
@@ -110,6 +146,49 @@ def build_network_from_size(
     G = nx.DiGraph(undirected_graph)
     initialize_edge_weights(G)
     return G
+
+
+def _rewire_influencer_hubs(
+    G: nx.DiGraph,
+    agents: list[Agent],
+    avg_degree: int,
+    seed: int | None,
+) -> None:
+    """Boost influencer out-degree to at least 3x avg_degree.
+
+    Outgoing edges represent followers (influence targets), so we expand
+    influencer successors to increase broadcast reach.
+    """
+    influencer_ids = [agent.id for agent in agents if agent.agent_type == "influencer"]
+    if not influencer_ids:
+        return
+
+    rng = random.Random(seed)
+    target_degree = int(INFLUENCER_DEGREE_MULTIPLIER * avg_degree)
+    max_targets = max(0, G.number_of_nodes() - 1)
+    target_degree = min(target_degree, max_targets)
+
+    for influencer_id in influencer_ids:
+        current_successors = set(get_successors(G, influencer_id))
+        needed = target_degree - len(current_successors)
+        if needed <= 0:
+            continue
+
+        candidates = [
+            node_id
+            for node_id in G.nodes
+            if node_id != influencer_id and node_id not in current_successors
+        ]
+        if not candidates:
+            continue
+
+        if needed >= len(candidates):
+            chosen = candidates
+        else:
+            chosen = rng.sample(candidates, k=needed)
+
+        for target_id in chosen:
+            G.add_edge(influencer_id, target_id)
 
 
 # =============================================================================
@@ -207,6 +286,7 @@ __all__ = [
     "assign_agents_to_graph",
     "build_network",
     "build_network_from_size",
+    "compute_edge_weights",
     "get_graph_snapshot",
     "get_influence_weights",
     "get_predecessors",
