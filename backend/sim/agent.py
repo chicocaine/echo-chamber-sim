@@ -15,7 +15,7 @@ from typing import Literal
 import numpy as np
 
 
-AgentType = Literal["stubborn", "flexible", "zealot", "bot"]
+AgentType = Literal["stubborn", "flexible", "zealot", "bot", "hk"]
 SIRState = Literal["S", "I", "R"]
 
 
@@ -121,7 +121,7 @@ class Agent:
         _assert_probability("misinfo_rate", self.misinfo_rate)
 
         assert self.id >= 0, f"id must be non-negative, got {self.id}"
-        assert self.agent_type in {"stubborn", "flexible", "zealot", "bot"}
+        assert self.agent_type in {"stubborn", "flexible", "zealot", "bot", "hk"}
         assert self.sir_state in {"S", "I", "R"}, f"invalid sir_state: {self.sir_state}"
 
         if not self.opinion_history:
@@ -193,6 +193,32 @@ class FlexibleAgent(Agent):
             normalized_weights[neighbor.id] * neighbor.opinion for neighbor in neighbors
         )
         return _clamp_opinion(weighted_avg)
+
+
+@dataclass(slots=True)
+class HKAgent(Agent):
+    """Hegselmann-Krause bounded-confidence agent update model.
+
+    Formula (agent reference Part 5):
+        N_i(t) = {j : |x_j(t) - x_i(t)| <= epsilon}
+        x_i(t+1) = (1 / |N_i(t)|) * sum_{j in N_i(t)} x_j(t)
+    """
+
+    def compute_update(
+        self,
+        neighbors: list[Agent],
+        influence_weights: dict[int, float],
+    ) -> float:
+        if not neighbors:
+            return self.opinion
+
+        epsilon = float(self.confidence_bound)
+        opinion = float(self.opinion)
+        in_bound = [neighbor.opinion for neighbor in neighbors if abs(neighbor.opinion - opinion) <= epsilon]
+        if not in_bound:
+            return self.opinion
+
+        return _clamp_opinion(float(np.mean(in_bound)))
 
 
 def sample_initial_opinion(
@@ -343,6 +369,7 @@ __all__ = [
     "Agent",
     "AgentType",
     "FlexibleAgent",
+    "HKAgent",
     "SIRState",
     "StubbornAgent",
     "create_agent",
