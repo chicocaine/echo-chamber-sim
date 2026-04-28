@@ -22,8 +22,12 @@ class SimConfig(BaseModel):
         default_factory=lambda: {
             "stubborn": 0.60,
             "flexible": 0.20,
-            "zealot": 0.15,
+            "passive": 0.10,
+            "zealot": 0.05,
             "bot": 0.05,
+            "hk": 0.0,
+            "contrarian": 0.0,
+            "influencer": 0.0,
         }
     )
     sir_beta: float = 0.3

@@ -37,6 +37,7 @@ export interface AgentState {
   media_literacy: number
   confidence_bound: number
   contrarian_prob: number
+  influence_weight_multiplier: number
   suspicion_score: number
   is_active: boolean
   sir_state: 'S' | 'I' | 'R'
