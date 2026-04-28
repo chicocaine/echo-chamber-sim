@@ -24,6 +24,7 @@ AgentType = Literal[
     "hk",
     "contrarian",
     "influencer",
+    "passive",
 ]
 SIRState = Literal["S", "I", "R"]
 
@@ -41,6 +42,8 @@ STANDARD_ACTIVITY_MEAN = 0.5
 STANDARD_ACTIVITY_STD = 0.15
 BOT_ACTIVITY_MEAN = 0.9
 BOT_ACTIVITY_STD = 0.05
+PASSIVE_ACTIVITY_MEAN = 0.07
+PASSIVE_ACTIVITY_STD = 0.03
 MEDIA_LITERACY_MIN = 0.2
 MEDIA_LITERACY_MAX = 0.8
 HK_CONFIDENCE_BOUND_DEFAULT = 0.3
@@ -141,6 +144,7 @@ class Agent:
             "hk",
             "contrarian",
             "influencer",
+            "passive",
         }
         assert self.sir_state in {"S", "I", "R"}, f"invalid sir_state: {self.sir_state}"
 
@@ -300,6 +304,8 @@ def _sample_activity_rate(rng: np.random.Generator, agent_type: AgentType) -> fl
     """Sample activity rate based on archetype defaults."""
     if agent_type == "bot":
         return _sample_truncated_normal(rng, BOT_ACTIVITY_MEAN, BOT_ACTIVITY_STD)
+    if agent_type == "passive":
+        return _sample_truncated_normal(rng, PASSIVE_ACTIVITY_MEAN, PASSIVE_ACTIVITY_STD)
     return _sample_truncated_normal(rng, STANDARD_ACTIVITY_MEAN, STANDARD_ACTIVITY_STD)
 
 
@@ -399,6 +405,7 @@ def initialize_agents(
             "hk",
             "contrarian",
             "influencer",
+            "passive",
         }:
             raise ValueError(f"Unsupported agent type in mix: {agent_type}")
         _assert_probability(f"agent_mix[{agent_type}]", fraction)
