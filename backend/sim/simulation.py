@@ -46,7 +46,9 @@ except NameError:
 # profile command: `kernprof -l -m sim.simulation`
 
 
-BASE_SHARE_PROB = 0.18
+SHARE_BASE_LOGIT = -1.5
+SHARE_AROUSAL_WEIGHT = 0.3
+SHARE_VALENCE_WEIGHT = 0.4
 FEED_INFLUENCE_MAX = 0.35
 
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -109,10 +111,18 @@ def _process_agent_tick(
 
     local_rng = random.Random(random_seed)
     shared: list[Content] = []
-    # Step 4: SHARING DECISION (Phase 2 stub — fixed probability for now)
+    # Step 4: SHARING DECISION (Phase 2 Step 2.2)
     for content in feed:
-        # STUB: Phase 2 sigmoid sharing probability.
-        if local_rng.random() < BASE_SHARE_PROB:
+        if agent.agent_type == "bot":
+            shared.append(content)
+            continue
+
+        share_probability = _sigmoid(
+            SHARE_BASE_LOGIT
+            + SHARE_AROUSAL_WEIGHT * new_arousal
+            + SHARE_VALENCE_WEIGHT * float(content.emotional_valence)
+        )
+        if local_rng.random() < share_probability:
             shared.append(content)
 
     # Step 5: OPINION UPDATE
@@ -198,6 +208,15 @@ def _serialize_agents(agents: list[Agent]) -> list[dict[str, Any]]:
 def _clamp_opinion(value: float) -> float:
     """Clamp opinions to invariant range [-1.0, 1.0]."""
     return float(max(-1.0, min(1.0, value)))
+
+
+def _sigmoid(value: float) -> float:
+    """Numerically stable logistic function for sharing decisions."""
+    if value >= 0.0:
+        z = float(np.exp(-value))
+        return 1.0 / (1.0 + z)
+    z = float(np.exp(value))
+    return z / (1.0 + z)
 
 
 def _network_rewiring_step() -> None:
