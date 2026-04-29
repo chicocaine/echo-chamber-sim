@@ -47,8 +47,6 @@ except NameError:
 
 
 SHARE_BASE_LOGIT = -1.5
-SHARE_AROUSAL_WEIGHT = 0.3
-SHARE_VALENCE_WEIGHT = 0.4
 FEED_INFLUENCE_MAX = 0.35
 
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -74,6 +72,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "sir_gamma": 0.05,
     "initial_opinion_distribution": "uniform",
     "emotional_decay": 0.85,
+    "arousal_share_weight": 0.3,
+    "valence_share_weight": 0.4,
+    "arousal_tolerance_effect": 0.4,
     "seed": 42,
 }
 
@@ -90,6 +91,8 @@ def _process_agent_tick(
     weights: dict[int, float],
     alpha: float,
     emotional_decay: float,
+    arousal_share_weight: float,
+    valence_share_weight: float,
     random_seed: int,
 ) -> tuple[int, float, float, list[Content]]:
     """Process Step 3/4/5 for one agent without shared-state mutation.
@@ -119,8 +122,8 @@ def _process_agent_tick(
 
         share_probability = _sigmoid(
             SHARE_BASE_LOGIT
-            + SHARE_AROUSAL_WEIGHT * new_arousal
-            + SHARE_VALENCE_WEIGHT * float(content.emotional_valence)
+            + arousal_share_weight * new_arousal
+            + valence_share_weight * float(content.emotional_valence)
         )
         if local_rng.random() < share_probability:
             shared.append(content)
@@ -166,6 +169,9 @@ def _validate_config(config: dict[str, Any]) -> None:
         "sir_gamma",
         "initial_opinion_distribution",
         "emotional_decay",
+        "arousal_share_weight",
+        "valence_share_weight",
+        "arousal_tolerance_effect",
         "seed",
     }
     missing = required_keys.difference(config.keys())
@@ -188,6 +194,10 @@ def _validate_config(config: dict[str, Any]) -> None:
     _assert_probability("beta_pop", float(config["beta_pop"]))
     _assert_probability("sir_beta", float(config["sir_beta"]))
     _assert_probability("sir_gamma", float(config["sir_gamma"]))
+    _assert_probability("emotional_decay", float(config["emotional_decay"]))
+    _assert_probability("arousal_share_weight", float(config["arousal_share_weight"]))
+    _assert_probability("valence_share_weight", float(config["valence_share_weight"]))
+    _assert_probability("arousal_tolerance_effect", float(config["arousal_tolerance_effect"]))
 
     if float(config["beta_pop"]) > 1.0:
         raise ValueError("beta_pop must be <= 1.0")
@@ -269,6 +279,7 @@ def run_simulation(
         agent_mix=dict(merged_config["agent_mix"]),
         seed=int(merged_config["seed"]),
         initial_opinion_distribution=str(merged_config["initial_opinion_distribution"]),
+        arousal_tolerance_effect=float(merged_config["arousal_tolerance_effect"]),
     )
     G = build_network(
         agents=agents,
@@ -301,6 +312,9 @@ def run_simulation(
     beta_pop = float(merged_config["beta_pop"])
     sir_beta = float(merged_config["sir_beta"])
     sir_gamma = float(merged_config["sir_gamma"])
+    emotional_decay = float(merged_config["emotional_decay"])
+    arousal_share_weight = float(merged_config["arousal_share_weight"])
+    valence_share_weight = float(merged_config["valence_share_weight"])
 
     for tick in range(total_ticks):
         active_agents = [agent for agent in agents if agent.is_active]
@@ -354,7 +368,6 @@ def run_simulation(
 
         # Step 3/4/5: compute per-agent outcomes, then synchronized apply.
         # For smaller populations, serial execution avoids joblib scheduling overhead.
-        emotional_decay = float(merged_config["emotional_decay"])
         if len(active_agents) < 300:
             step_results = [
                 _process_agent_tick(
@@ -364,6 +377,8 @@ def run_simulation(
                     weights=influence_weights_by_agent[agent.id],
                     alpha=alpha,
                     emotional_decay=emotional_decay,
+                    arousal_share_weight=arousal_share_weight,
+                    valence_share_weight=valence_share_weight,
                     random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
                 )
                 for agent in active_agents
@@ -377,6 +392,8 @@ def run_simulation(
                     weights=influence_weights_by_agent[agent.id],
                     alpha=alpha,
                     emotional_decay=emotional_decay,
+                    arousal_share_weight=arousal_share_weight,
+                    valence_share_weight=valence_share_weight,
                     random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
                 )
                 for agent in active_agents

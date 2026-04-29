@@ -11,6 +11,10 @@ export interface SimConfig {
   sir_beta: number
   sir_gamma: number
   initial_opinion_distribution: 'uniform' | 'bimodal'
+  emotional_decay: number
+  arousal_share_weight: number
+  valence_share_weight: number
+  arousal_tolerance_effect: number
   seed: number
 }
 
@@ -36,6 +40,7 @@ export interface AgentState {
   emotional_arousal: number
   media_literacy: number
   confidence_bound: number
+  arousal_tolerance_effect: number
   contrarian_prob: number
   influence_weight_multiplier: number
   suspicion_score: number

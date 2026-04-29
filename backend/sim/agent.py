@@ -112,6 +112,7 @@ class Agent:
     emotional_arousal: float
     media_literacy: float
     confidence_bound: float
+    arousal_tolerance_effect: float
     contrarian_prob: float
     influence_weight_multiplier: float
     suspicion_score: float
@@ -132,6 +133,7 @@ class Agent:
         _assert_probability("emotional_arousal", self.emotional_arousal)
         _assert_probability("media_literacy", self.media_literacy)
         _assert_probability("confidence_bound", self.confidence_bound)
+        _assert_probability("arousal_tolerance_effect", self.arousal_tolerance_effect)
         _assert_probability("contrarian_prob", self.contrarian_prob)
         _assert_probability("suspicion_score", self.suspicion_score)
         _assert_probability("misinfo_rate", self.misinfo_rate)
@@ -238,7 +240,7 @@ class HKAgent(Agent):
             return self.opinion
 
         epsilon_eff = float(self.confidence_bound) * (
-            1.0 - AROUSAL_TOLERANCE_EFFECT_DEFAULT * float(self.emotional_arousal)
+            1.0 - float(self.arousal_tolerance_effect) * float(self.emotional_arousal)
         )
         epsilon = float(np.clip(epsilon_eff, 0.0, 1.0))
         opinion = float(self.opinion)
@@ -319,6 +321,7 @@ def create_agent(
     rng: np.random.Generator,
     initial_opinion_distribution: Literal["uniform", "bimodal"] = "uniform",
     bot_misinfo_rate: float = 1.0,
+    arousal_tolerance_effect: float = AROUSAL_TOLERANCE_EFFECT_DEFAULT,
 ) -> Agent:
     """Create a single agent with Step 2 defaults.
 
@@ -363,6 +366,7 @@ def create_agent(
         emotional_arousal=0.0,
         media_literacy=float(rng.uniform(MEDIA_LITERACY_MIN, MEDIA_LITERACY_MAX)),
         confidence_bound=HK_CONFIDENCE_BOUND_DEFAULT,
+        arousal_tolerance_effect=arousal_tolerance_effect,
         contrarian_prob=contrarian_prob,
         influence_weight_multiplier=influence_weight_multiplier,
         suspicion_score=0.0,
@@ -389,6 +393,7 @@ def initialize_agents(
     seed: int,
     initial_opinion_distribution: Literal["uniform", "bimodal"] = "uniform",
     bot_misinfo_rate: float = 1.0,
+    arousal_tolerance_effect: float = AROUSAL_TOLERANCE_EFFECT_DEFAULT,
 ) -> list[Agent]:
     """Initialize a population of agents from a fractional type mix.
 
@@ -449,6 +454,7 @@ def initialize_agents(
             rng=rng,
             initial_opinion_distribution=initial_opinion_distribution,
             bot_misinfo_rate=bot_misinfo_rate,
+            arousal_tolerance_effect=arousal_tolerance_effect,
         )
         for agent_id in range(n_agents)
     ]

@@ -34,6 +34,9 @@ class SimConfig(BaseModel):
     sir_gamma: float = 0.05
     initial_opinion_distribution: Literal["uniform", "bimodal"] = "uniform"
     emotional_decay: float = 0.85
+    arousal_share_weight: float = 0.3
+    valence_share_weight: float = 0.4
+    arousal_tolerance_effect: float = 0.4
     seed: int = 42
 
     @model_validator(mode="after")
@@ -57,6 +60,9 @@ class SimConfig(BaseModel):
             "sir_beta": self.sir_beta,
             "sir_gamma": self.sir_gamma,
             "emotional_decay": self.emotional_decay,
+            "arousal_share_weight": self.arousal_share_weight,
+            "valence_share_weight": self.valence_share_weight,
+            "arousal_tolerance_effect": self.arousal_tolerance_effect,
         }
         for name, value in probability_fields.items():
             if not 0.0 <= value <= 1.0:
