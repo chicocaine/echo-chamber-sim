@@ -120,6 +120,7 @@ class Agent:
     sir_state: SIRState
     opinion_history: list[float] = field(default_factory=list)
     misinfo_rate: float = 0.0
+    exposure_count: dict[int, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.opinion = _clamp_opinion(self.opinion)

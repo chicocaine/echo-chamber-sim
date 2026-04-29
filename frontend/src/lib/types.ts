@@ -48,6 +48,7 @@ export interface AgentState {
   sir_state: 'S' | 'I' | 'R'
   opinion_history: number[]
   misinfo_rate: number
+  exposure_count: Record<number, number>
 }
 
 export interface GraphNode {
