@@ -47,6 +47,7 @@ PASSIVE_ACTIVITY_STD = 0.03
 MEDIA_LITERACY_MIN = 0.2
 MEDIA_LITERACY_MAX = 0.8
 HK_CONFIDENCE_BOUND_DEFAULT = 0.3
+AROUSAL_TOLERANCE_EFFECT_DEFAULT = 0.4
 CONTRARIAN_PROB_DEFAULT = 0.3
 INFLUENCE_WEIGHT_MULTIPLIER_DEFAULT = 2.0
 BIMODAL_PEAK = 0.7
@@ -236,7 +237,10 @@ class HKAgent(Agent):
         if not neighbors:
             return self.opinion
 
-        epsilon = float(self.confidence_bound)
+        epsilon_eff = float(self.confidence_bound) * (
+            1.0 - AROUSAL_TOLERANCE_EFFECT_DEFAULT * float(self.emotional_arousal)
+        )
+        epsilon = float(np.clip(epsilon_eff, 0.0, 1.0))
         opinion = float(self.opinion)
         in_bound = [neighbor.opinion for neighbor in neighbors if abs(neighbor.opinion - opinion) <= epsilon]
         if not in_bound:
