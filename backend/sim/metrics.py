@@ -122,7 +122,10 @@ def misinformation_prevalence(G: nx.DiGraph, agents: list[Agent]) -> float:
     """Compute fraction of agents currently in misinformation state I."""
     if not agents:
         return 0.0
-    infected = sum(1 for agent in agents if agent.sir_state == "I")
+    infected = sum(
+        1 for agent in agents
+        if any(state == "I" for state in agent.sir_states.values())
+    )
     return float(infected / len(agents))
 
 

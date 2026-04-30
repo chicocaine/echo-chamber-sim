@@ -117,7 +117,7 @@ class Agent:
     influence_weight_multiplier: float
     suspicion_score: float
     is_active: bool
-    sir_state: SIRState
+    sir_states: dict[int, str] = field(default_factory=dict)  # campaign_id -> SIR state
     opinion_history: list[float] = field(default_factory=list)
     misinfo_rate: float = 0.0
     exposure_count: dict[int, int] = field(default_factory=dict)
@@ -150,7 +150,9 @@ class Agent:
             "influencer",
             "passive",
         }
-        assert self.sir_state in {"S", "I", "R"}, f"invalid sir_state: {self.sir_state}"
+        for cid, state in self.sir_states.items():
+            assert isinstance(cid, int), f"campaign_id must be int, got {type(cid)}"
+            assert state in {"S", "I", "R"}, f"invalid SIR state for campaign {cid}: {state}"
 
         if not self.opinion_history:
             # Tick-0 history is required for downstream bot detection signals.
@@ -372,7 +374,7 @@ def create_agent(
         influence_weight_multiplier=influence_weight_multiplier,
         suspicion_score=0.0,
         is_active=True,
-        sir_state="S",
+        sir_states={},
         opinion_history=[opinion],
         misinfo_rate=misinfo_rate,
     )

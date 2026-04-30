@@ -631,46 +631,48 @@ def run_simulation(
             agent.opinion = float(new_opinions.get(agent.id, agent.opinion))
             agent.emotional_arousal = float(new_arousals.get(agent.id, 0.0))
 
-        # SIR transitions with exposure-count reinforcement (Phase 2b + Phase 5 Step 5.1).
+        # SIR transitions — multi-claim tracking (Phase 5 Step 5.2).
         for agent in active_agents:
-            if agent.sir_state == "S":
-                feed = consumed_items.get(agent.id, [])
-                if not feed:
-                    continue
-                # Use effective misinfo score to detect misinfo (accounts for
-                # campaign expiry and satire/literacy interaction).
-                misinfo_items = [
-                    c
-                    for c in feed
-                    if get_effective_misinfo_score(
-                        c, tick, campaign_expiry, agent.media_literacy
-                    )
-                    > 0.5
-                ]
-                if not misinfo_items:
-                    continue
+            feed = consumed_items.get(agent.id, [])
+            if not feed:
+                continue
 
-                should_infect = False
-                for content in misinfo_items:
-                    # Track exposure by campaign (preferred) or content ID.
-                    exposure_key = content.coordinated_campaign_id or content.id
-                    agent.exposure_count[exposure_key] = (
-                        agent.exposure_count.get(exposure_key, 0) + 1
-                    )
-                    n_exposures = agent.exposure_count[exposure_key]
-                    effective_beta = sir_beta * (
-                        1.0 + n_exposures * reinforcement_factor
-                    )
-                    effective_beta = min(effective_beta, 1.0)
-                    if py_rng.random() < effective_beta:
-                        should_infect = True
-                        break
+            # Group misinformation by campaign (or content ID for non-campaign).
+            misinfo_by_campaign: dict[int, list[Content]] = {}
+            for content in feed:
+                effective = get_effective_misinfo_score(
+                    content, tick, campaign_expiry, agent.media_literacy
+                )
+                if effective <= 0.5:
+                    continue
+                key = content.coordinated_campaign_id or content.id
+                misinfo_by_campaign.setdefault(key, []).append(content)
 
-                if should_infect:
-                    agent.sir_state = "I"
-            elif agent.sir_state == "I":
-                if py_rng.random() < sir_gamma:
-                    agent.sir_state = "R"
+            # Per-campaign SIR transitions.
+            for campaign_id, items in misinfo_by_campaign.items():
+                current_state = agent.sir_states.get(campaign_id, "S")
+
+                if current_state == "S":
+                    should_infect = False
+                    for content in items:
+                        agent.exposure_count[campaign_id] = (
+                            agent.exposure_count.get(campaign_id, 0) + 1
+                        )
+                        n_exposures = agent.exposure_count[campaign_id]
+                        effective_beta = sir_beta * (
+                            1.0 + n_exposures * reinforcement_factor
+                        )
+                        effective_beta = min(effective_beta, 1.0)
+                        if py_rng.random() < effective_beta:
+                            should_infect = True
+                            break
+
+                    if should_infect:
+                        agent.sir_states[campaign_id] = "I"
+
+                elif current_state == "I":
+                    if py_rng.random() < sir_gamma:
+                        agent.sir_states[campaign_id] = "R"
 
         # Step 6: NETWORK REWIRING
         _network_rewiring_step(
