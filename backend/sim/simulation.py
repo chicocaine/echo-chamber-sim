@@ -23,7 +23,12 @@ from .network import (
     get_influence_weights,
     get_predecessors,
 )
-from .recommender import generate_feed_vectorized
+from .recommender import (
+    CollaborativeFilteringRecommender,
+    ContentBasedRecommender,
+    GraphBasedRecommender,
+    generate_feed_vectorized,
+)
 
 
 try:
@@ -344,6 +349,8 @@ def run_simulation(
     emotional_decay = float(merged_config["emotional_decay"])
     arousal_share_weight = float(merged_config["arousal_share_weight"])
     valence_share_weight = float(merged_config["valence_share_weight"])
+    recommender_type = str(merged_config["recommender_type"])
+    cf_blend_ratio = float(merged_config["cf_blend_ratio"])
 
     for tick in range(total_ticks):
         active_agents = [agent for agent in agents if agent.is_active]
@@ -362,46 +369,124 @@ def run_simulation(
                 content_id_counter += 1
 
         # Step 2: FEED GENERATION
-        def _generate_agent_feed(agent: Agent) -> tuple[int, list[Content]]:
-            predecessor_ids = predecessor_ids_by_agent[agent.id]
-            candidate_pool: list[Content] = list(current_tick_pool)
-            for predecessor_id in predecessor_ids:
-                candidate_pool.extend(previous_shared_content.get(predecessor_id, []))
-
-            if not candidate_pool:
-                return (agent.id, [])
-
-            content_ideo_array = np.fromiter(
-                (content.ideological_score for content in candidate_pool),
-                dtype=np.float64,
-                count=len(candidate_pool),
-            )
-            content_virality_array = np.fromiter(
-                (content.virality for content in candidate_pool),
-                dtype=np.float64,
-                count=len(candidate_pool),
-            )
-            content_misinfo_array = np.fromiter(
-                (content.misinfo_score for content in candidate_pool),
-                dtype=np.float64,
-                count=len(candidate_pool),
-            )
-            feed = generate_feed_vectorized(
-                agent=agent,
-                candidate_pool=candidate_pool,
-                content_ideo_array=content_ideo_array,
-                content_virality_array=content_virality_array,
-                content_misinfo_array=content_misinfo_array,
-                k_exp=k_exp,
+        # Set up recommender based on type (Phase 3 Step 3.5/3.6).
+        if recommender_type == "content_based":
+            cb_recommender: ContentBasedRecommender | None = ContentBasedRecommender(
                 alpha=alpha,
                 beta_pop=beta_pop,
-                lambda_penalty=lambda_penalty,
                 diversity_ratio=diversity_ratio,
+                lambda_penalty=lambda_penalty,
             )
-            return (agent.id, feed)
+            cf_recommender = None
+            graph_recommender = None
+        elif recommender_type == "cf":
+            cb_recommender = None
+            cf_recommender = CollaborativeFilteringRecommender()
+            cf_recommender.update_context(active_agents, previous_shared_content)
+            graph_recommender = None
+        elif recommender_type == "graph":
+            cb_recommender = None
+            cf_recommender = None
+            graph_recommender = GraphBasedRecommender()
+            graph_recommender.update_context(G, previous_shared_content)
+        elif recommender_type == "hybrid":
+            cb_recommender = ContentBasedRecommender(
+                alpha=alpha,
+                beta_pop=beta_pop,
+                diversity_ratio=diversity_ratio,
+                lambda_penalty=lambda_penalty,
+            )
+            cf_recommender = CollaborativeFilteringRecommender()
+            cf_recommender.update_context(active_agents, previous_shared_content)
+            graph_recommender = None
+        else:
+            cb_recommender = ContentBasedRecommender(
+                alpha=alpha, beta_pop=beta_pop,
+                diversity_ratio=diversity_ratio, lambda_penalty=lambda_penalty,
+            )
+            cf_recommender = None
+            graph_recommender = None
 
-        feed_pairs = [_generate_agent_feed(agent) for agent in active_agents]
-        feeds: dict[int, list[Content]] = dict(feed_pairs)
+        # Build candidate pools per agent.
+        candidate_pools: dict[int, list[Content]] = {}
+        for agent in active_agents:
+            pool: list[Content] = list(current_tick_pool)
+            for predecessor_id in predecessor_ids_by_agent[agent.id]:
+                pool.extend(previous_shared_content.get(predecessor_id, []))
+            candidate_pools[agent.id] = pool
+
+        feeds: dict[int, list[Content]] = {}
+        for agent in active_agents:
+            candidate_pool = candidate_pools[agent.id]
+            if not candidate_pool:
+                feeds[agent.id] = []
+                continue
+
+            if recommender_type == "content_based":
+                assert cb_recommender is not None
+                content_ideo_array = np.fromiter(
+                    (c.ideological_score for c in candidate_pool),
+                    dtype=np.float64, count=len(candidate_pool),
+                )
+                content_virality_array = np.fromiter(
+                    (c.virality for c in candidate_pool),
+                    dtype=np.float64, count=len(candidate_pool),
+                )
+                content_misinfo_array = np.fromiter(
+                    (c.misinfo_score for c in candidate_pool),
+                    dtype=np.float64, count=len(candidate_pool),
+                )
+                feeds[agent.id] = generate_feed_vectorized(
+                    agent=agent,
+                    candidate_pool=candidate_pool,
+                    content_ideo_array=content_ideo_array,
+                    content_virality_array=content_virality_array,
+                    content_misinfo_array=content_misinfo_array,
+                    k_exp=k_exp,
+                    alpha=alpha,
+                    beta_pop=beta_pop,
+                    lambda_penalty=lambda_penalty,
+                    diversity_ratio=diversity_ratio,
+                )
+            elif recommender_type == "cf":
+                assert cf_recommender is not None
+                feeds[agent.id] = cf_recommender.generate_feed(
+                    agent, candidate_pool, k_exp,
+                )
+            elif recommender_type == "graph":
+                assert graph_recommender is not None
+                feeds[agent.id] = graph_recommender.generate_feed(
+                    agent, candidate_pool, k_exp,
+                )
+            elif recommender_type == "hybrid":
+                assert cb_recommender is not None and cf_recommender is not None
+                cf_feed = cf_recommender.generate_feed(agent, candidate_pool, k_exp)
+                cb_feed = cb_recommender.generate_feed(agent, candidate_pool, k_exp)
+                # Blend: interleave CF and CB items by blend ratio.
+                n_cf = int(k_exp * cf_blend_ratio)
+                n_cb = k_exp - n_cf
+                seen: set[int] = set()
+                blended: list[Content] = []
+                for item in cf_feed[:n_cf]:
+                    if item.id not in seen:
+                        blended.append(item)
+                        seen.add(item.id)
+                for item in cb_feed:
+                    if len(blended) >= k_exp:
+                        break
+                    if item.id not in seen:
+                        blended.append(item)
+                        seen.add(item.id)
+                # Fill remaining slots from either feed
+                for item in cf_feed + cb_feed:
+                    if len(blended) >= k_exp:
+                        break
+                    if item.id not in seen:
+                        blended.append(item)
+                        seen.add(item.id)
+                feeds[agent.id] = blended
+            else:
+                feeds[agent.id] = candidate_pool[:k_exp]
 
         # Step 3/4/5: compute per-agent outcomes, then synchronized apply.
         # For smaller populations, serial execution avoids joblib scheduling overhead.
