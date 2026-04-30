@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 
@@ -228,6 +228,111 @@ class CollaborativeFilteringRecommender(BaseRecommender):
         return [c for _, c in scored[:k_exp]]
 
 
+class GraphBasedRecommender(BaseRecommender):
+    """Recommender using random walks on the social graph (Phase 3 Step 3.4).
+
+    From the target agent, performs random walks of length ``walk_length``
+    with ``restart_probability`` chance of jumping back to origin at each step.
+    Content shared by visited agents is scored by graph proximity (shorter
+    walk = higher weight) combined with ideological similarity.
+    """
+
+    def __init__(
+        self,
+        walk_length: int = 3,
+        restart_probability: float = 0.15,
+    ) -> None:
+        self.walk_length = int(walk_length)
+        self.restart_probability = float(restart_probability)
+        self._graph: Any = None
+        self._shared_content: dict[int, list["Content"]] = {}
+
+        if self.walk_length <= 0:
+            raise ValueError("walk_length must be > 0")
+        if not 0.0 <= self.restart_probability <= 1.0:
+            raise ValueError("restart_probability must be in [0, 1]")
+
+    def update_context(
+        self,
+        graph: Any,
+        shared_content: dict[int, list["Content"]],
+    ) -> None:
+        """Update the graph and engagement data for the current tick.
+
+        Must be called before generate_feed() each tick.
+        """
+        self._graph = graph
+        self._shared_content = shared_content
+
+    def score(self, content: "Content", agent: "Agent") -> float:
+        """Per-item score fallback — ideological similarity."""
+        return 1.0 - abs(content.ideological_score - agent.opinion)
+
+    def generate_feed(
+        self,
+        agent: "Agent",
+        candidate_pool: list["Content"],
+        k_exp: int,
+    ) -> list["Content"]:
+        """Generate feed via graph random-walk scoring.
+
+        Performs a random walk from the agent, collects content shared by
+        visited agents, and scores by (1 / (steps + 1)) * ideological_similarity.
+        Falls back to ideological similarity when walk yields no content.
+        """
+        if not candidate_pool:
+            return []
+
+        if self._graph is None:
+            scored = [(self.score(c, agent), c) for c in candidate_pool]
+            scored.sort(key=lambda item: item[0], reverse=True)
+            return [c for _, c in scored[:k_exp]]
+
+        rng = np.random.default_rng(abs(hash(agent.id)))
+        visited: dict[int, float] = {agent.id: 1.0}  # node_id -> proximity weight
+
+        current = agent.id
+        for step in range(self.walk_length):
+            if rng.random() < self.restart_probability:
+                current = agent.id
+                step_weight = 1.0 / (step + 2)  # steps increases here but weight uses step+1
+            else:
+                successors = list(self._graph.successors(current))
+                if not successors:
+                    break
+                current = int(rng.choice(successors))
+                step_weight = 1.0 / (step + 2)
+
+            if current not in visited or step_weight > visited[current]:
+                visited[current] = step_weight
+
+        # Build proximity-weighted content index from visited agents' shared content.
+        content_scores: dict[int, float] = {}
+        for node_id, proximity in visited.items():
+            for content in self._shared_content.get(node_id, []):
+                opinion = self._graph.nodes[node_id].get("agent")
+                if opinion is not None and hasattr(opinion, "opinion"):
+                    ideological_sim = 1.0 - abs(float(opinion.opinion) - agent.opinion)
+                else:
+                    ideological_sim = self.score(content, agent)
+                combined = proximity * ideological_sim
+                if content.id not in content_scores or combined > content_scores[content.id]:
+                    content_scores[content.id] = combined
+
+        if not content_scores:
+            scored = [(self.score(c, agent), c) for c in candidate_pool]
+            scored.sort(key=lambda item: item[0], reverse=True)
+            return [c for _, c in scored[:k_exp]]
+
+        scored = []
+        for content in candidate_pool:
+            walk_score = content_scores.get(content.id, 0.0)
+            scored.append((walk_score, content))
+
+        scored.sort(key=lambda item: item[0], reverse=True)
+        return [c for _, c in scored[:k_exp]]
+
+
 @profile
 def generate_feed_vectorized(
     agent: "Agent",
@@ -303,5 +408,6 @@ __all__ = [
     "BaseRecommender",
     "CollaborativeFilteringRecommender",
     "ContentBasedRecommender",
+    "GraphBasedRecommender",
     "generate_feed_vectorized",
 ]
