@@ -71,6 +71,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "sir_beta": 0.3,
     "sir_gamma": 0.05,
     "reinforcement_factor": 0.0,
+    "recommender_type": "content_based",
+    "cf_blend_ratio": 0.5,
     "diversity_ratio": 0.0,
     "lambda_penalty": 0.0,
     "virality_dampening": 0.0,
@@ -174,6 +176,8 @@ def _validate_config(config: dict[str, Any]) -> None:
         "sir_beta",
         "sir_gamma",
         "reinforcement_factor",
+        "recommender_type",
+        "cf_blend_ratio",
         "diversity_ratio",
         "lambda_penalty",
         "virality_dampening",
@@ -205,9 +209,16 @@ def _validate_config(config: dict[str, Any]) -> None:
     _assert_probability("sir_beta", float(config["sir_beta"]))
     _assert_probability("sir_gamma", float(config["sir_gamma"]))
     _assert_probability("reinforcement_factor", float(config["reinforcement_factor"]))
+    _assert_probability("cf_blend_ratio", float(config["cf_blend_ratio"]))
     _assert_probability("diversity_ratio", float(config["diversity_ratio"]))
     _assert_probability("lambda_penalty", float(config["lambda_penalty"]))
     _assert_probability("virality_dampening", float(config["virality_dampening"]))
+
+    recommender_type = str(config["recommender_type"])
+    if recommender_type not in {"content_based", "cf", "graph", "hybrid"}:
+        raise ValueError(
+            f"recommender_type must be one of content_based, cf, graph, hybrid; got {recommender_type}"
+        )
     _assert_probability("emotional_decay", float(config["emotional_decay"]))
     _assert_probability("arousal_share_weight", float(config["arousal_share_weight"]))
     _assert_probability("valence_share_weight", float(config["valence_share_weight"]))

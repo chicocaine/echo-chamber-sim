@@ -6,6 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+RecommenderType = Literal["content_based", "cf", "graph", "hybrid"]
+
 
 class SimConfig(BaseModel):
     """Configuration payload for running a simulation."""
@@ -33,6 +35,8 @@ class SimConfig(BaseModel):
     sir_beta: float = 0.3
     sir_gamma: float = 0.05
     reinforcement_factor: float = 0.0
+    recommender_type: RecommenderType = "content_based"
+    cf_blend_ratio: float = 0.5
     diversity_ratio: float = 0.0
     lambda_penalty: float = 0.0
     virality_dampening: float = 0.0
@@ -64,6 +68,7 @@ class SimConfig(BaseModel):
             "sir_beta": self.sir_beta,
             "sir_gamma": self.sir_gamma,
             "reinforcement_factor": self.reinforcement_factor,
+            "cf_blend_ratio": self.cf_blend_ratio,
             "diversity_ratio": self.diversity_ratio,
             "lambda_penalty": self.lambda_penalty,
             "virality_dampening": self.virality_dampening,
