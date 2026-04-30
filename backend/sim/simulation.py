@@ -15,6 +15,10 @@ from joblib import Parallel, delayed
 import numpy as np
 
 from .agent import Agent, initialize_agents
+from .bot_detection import (
+    compute_population_activity_stats,
+    compute_suspicion_score,
+)
 from .content import (
     CAMPAIGN_EXPIRY_DELTA,
     Content,
@@ -93,6 +97,11 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "enable_churn": False,
     "churn_base": -4.0,
     "churn_weight": 1.0,
+    "T_detect": 24,
+    "s_thresh": 0.7,
+    "p_detect_remove": 0.0,
+    "rate_limit_factor": 0.0,
+    "media_literacy_boost": 0.0,
     "diversity_ratio": 0.0,
     "lambda_penalty": 0.0,
     "virality_dampening": 0.0,
@@ -204,6 +213,11 @@ def _validate_config(config: dict[str, Any]) -> None:
         "enable_churn",
         "churn_base",
         "churn_weight",
+        "T_detect",
+        "s_thresh",
+        "p_detect_remove",
+        "rate_limit_factor",
+        "media_literacy_boost",
         "diversity_ratio",
         "lambda_penalty",
         "virality_dampening",
@@ -252,6 +266,12 @@ def _validate_config(config: dict[str, Any]) -> None:
         raise ValueError("enable_churn must be a boolean")
     if float(config["churn_weight"]) < 0.0:
         raise ValueError("churn_weight must be >= 0")
+    if int(config["T_detect"]) <= 0:
+        raise ValueError("T_detect must be > 0")
+    _assert_probability("s_thresh", float(config["s_thresh"]))
+    _assert_probability("p_detect_remove", float(config["p_detect_remove"]))
+    _assert_probability("rate_limit_factor", float(config["rate_limit_factor"]))
+    _assert_probability("media_literacy_boost", float(config["media_literacy_boost"]))
     _assert_probability("diversity_ratio", float(config["diversity_ratio"]))
     _assert_probability("lambda_penalty", float(config["lambda_penalty"]))
     _assert_probability("virality_dampening", float(config["virality_dampening"]))
@@ -349,11 +369,51 @@ def _churn_step(
             G.remove_node(agent.id)
 
 
-def _bot_detection_step() -> None:
-    """Placeholder for Phase 5 bot detection logic."""
-    # STUB: Phase 5 — Bot detection step
-    # See implementation plan Phase 5, Step 5.4 for full implementation.
-    pass
+def _bot_detection_step(
+    G: Any,
+    agents: list[Agent],
+    shared_content: dict[int, list[Content]],
+    T_detect: int,
+    s_thresh: float,
+    p_detect_remove: float,
+    rate_limit_factor: float,
+    tick: int,
+    seed: int,
+) -> None:
+    """Behavioral bot detection and intervention (Phase 5 Step 5.4).
+
+    Every ``T_detect`` ticks, computes suspicion scores for all active agents
+    using four behavioral signals. Agents scoring >= ``s_thresh`` are either
+    removed (with probability ``p_detect_remove``) or rate-limited.
+    """
+    if tick % T_detect != 0 or (p_detect_remove <= 0.0 and rate_limit_factor <= 0.0):
+        return
+
+    pop_mean, pop_std = compute_population_activity_stats(agents)
+    rng = random.Random(seed + tick * 1_000_111)
+
+    for agent in agents:
+        if not agent.is_active:
+            continue
+
+        agent.suspicion_score = compute_suspicion_score(
+            agent=agent,
+            recent_shares=shared_content.get(agent.id, []),
+            G=G,
+            population_mean_activity=pop_mean,
+            population_std_activity=pop_std,
+        )
+
+        if agent.suspicion_score < s_thresh:
+            continue
+
+        if p_detect_remove > 0.0 and rng.random() < p_detect_remove:
+            agent.is_active = False
+            G.remove_node(agent.id)
+        elif rate_limit_factor > 0.0:
+            agent.activity_rate = float(np.clip(
+                agent.activity_rate * (1.0 - rate_limit_factor), 0.0, 1.0,
+            ))
 
 
 @profile
@@ -386,6 +446,7 @@ def run_simulation(
         seed=int(merged_config["seed"]),
         initial_opinion_distribution=str(merged_config["initial_opinion_distribution"]),
         arousal_tolerance_effect=float(merged_config["arousal_tolerance_effect"]),
+        media_literacy_boost=float(merged_config["media_literacy_boost"]),
     )
     topology = str(merged_config["topology"])
     community_sizes = merged_config.get("community_sizes")
@@ -439,6 +500,11 @@ def run_simulation(
     enable_churn = bool(merged_config["enable_churn"])
     churn_base = float(merged_config["churn_base"])
     churn_weight = float(merged_config["churn_weight"])
+    T_detect = int(merged_config["T_detect"])
+    s_thresh = float(merged_config["s_thresh"])
+    p_detect_remove = float(merged_config["p_detect_remove"])
+    rate_limit_factor = float(merged_config["rate_limit_factor"])
+    media_literacy_boost = float(merged_config["media_literacy_boost"])
 
     for tick in range(total_ticks):
         active_agents = [agent for agent in agents if agent.is_active]
@@ -727,8 +793,18 @@ def run_simulation(
                 a.id: get_influence_weights(G, a.id) for a in surviving
             }
 
-        # Step 8: BOT DETECTION (MVP stub)
-        _bot_detection_step()
+        # Step 8: BOT DETECTION
+        _bot_detection_step(
+            G=G,
+            agents=agents,
+            shared_content=shared_content,
+            T_detect=T_detect,
+            s_thresh=s_thresh,
+            p_detect_remove=p_detect_remove,
+            rate_limit_factor=rate_limit_factor,
+            tick=tick,
+            seed=base_seed,
+        )
 
         # Step 9: METRIC LOGGING
         if tick % snapshot_interval == 0:

@@ -46,6 +46,11 @@ class SimConfig(BaseModel):
     enable_churn: bool = False
     churn_base: float = -4.0
     churn_weight: float = 1.0
+    T_detect: int = 24
+    s_thresh: float = 0.7
+    p_detect_remove: float = 0.0
+    rate_limit_factor: float = 0.0
+    media_literacy_boost: float = 0.0
     diversity_ratio: float = 0.0
     lambda_penalty: float = 0.0
     virality_dampening: float = 0.0
@@ -69,6 +74,8 @@ class SimConfig(BaseModel):
             raise ValueError("snapshot_interval must be > 0")
         if self.k_exp <= 0:
             raise ValueError("k_exp must be > 0")
+        if self.T_detect <= 0:
+            raise ValueError("T_detect must be > 0")
 
         probability_fields = {
             "rewire_prob": self.rewire_prob,
@@ -80,6 +87,10 @@ class SimConfig(BaseModel):
             "cf_blend_ratio": self.cf_blend_ratio,
             "dynamic_rewire_rate": self.dynamic_rewire_rate,
             "homophily_threshold": self.homophily_threshold,
+            "s_thresh": self.s_thresh,
+            "p_detect_remove": self.p_detect_remove,
+            "rate_limit_factor": self.rate_limit_factor,
+            "media_literacy_boost": self.media_literacy_boost,
             "diversity_ratio": self.diversity_ratio,
             "lambda_penalty": self.lambda_penalty,
             "virality_dampening": self.virality_dampening,

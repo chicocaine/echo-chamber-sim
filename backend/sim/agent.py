@@ -325,6 +325,7 @@ def create_agent(
     initial_opinion_distribution: Literal["uniform", "bimodal"] = "uniform",
     bot_misinfo_rate: float = 1.0,
     arousal_tolerance_effect: float = AROUSAL_TOLERANCE_EFFECT_DEFAULT,
+    media_literacy_boost: float = 0.0,
 ) -> Agent:
     """Create a single agent with Step 2 defaults.
 
@@ -367,7 +368,10 @@ def create_agent(
         expertise=_sample_truncated_normal(rng, EXPERTISE_MEAN, EXPERTISE_STD),
         activity_rate=_sample_activity_rate(rng, agent_type),
         emotional_arousal=0.0,
-        media_literacy=float(rng.uniform(MEDIA_LITERACY_MIN, MEDIA_LITERACY_MAX)),
+        media_literacy=_clip_probability(
+            float(rng.uniform(MEDIA_LITERACY_MIN, MEDIA_LITERACY_MAX))
+            + media_literacy_boost
+        ),
         confidence_bound=HK_CONFIDENCE_BOUND_DEFAULT,
         arousal_tolerance_effect=arousal_tolerance_effect,
         contrarian_prob=contrarian_prob,
@@ -397,6 +401,7 @@ def initialize_agents(
     initial_opinion_distribution: Literal["uniform", "bimodal"] = "uniform",
     bot_misinfo_rate: float = 1.0,
     arousal_tolerance_effect: float = AROUSAL_TOLERANCE_EFFECT_DEFAULT,
+    media_literacy_boost: float = 0.0,
 ) -> list[Agent]:
     """Initialize a population of agents from a fractional type mix.
 
@@ -458,6 +463,7 @@ def initialize_agents(
             initial_opinion_distribution=initial_opinion_distribution,
             bot_misinfo_rate=bot_misinfo_rate,
             arousal_tolerance_effect=arousal_tolerance_effect,
+            media_literacy_boost=media_literacy_boost,
         )
         for agent_id in range(n_agents)
     ]
