@@ -19,6 +19,7 @@ from .content import Content, maybe_generate_content
 from .metrics import compute_all_metrics
 from .network import (
     build_network,
+    compute_dissatisfaction,
     get_graph_snapshot,
     get_influence_weights,
     get_predecessors,
@@ -81,6 +82,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "cf_blend_ratio": 0.5,
     "dynamic_rewire_rate": 0.01,
     "homophily_threshold": 0.3,
+    "enable_churn": False,
+    "churn_base": -4.0,
+    "churn_weight": 1.0,
     "diversity_ratio": 0.0,
     "lambda_penalty": 0.0,
     "virality_dampening": 0.0,
@@ -188,6 +192,9 @@ def _validate_config(config: dict[str, Any]) -> None:
         "cf_blend_ratio",
         "dynamic_rewire_rate",
         "homophily_threshold",
+        "enable_churn",
+        "churn_base",
+        "churn_weight",
         "diversity_ratio",
         "lambda_penalty",
         "virality_dampening",
@@ -222,6 +229,10 @@ def _validate_config(config: dict[str, Any]) -> None:
     _assert_probability("cf_blend_ratio", float(config["cf_blend_ratio"]))
     _assert_probability("dynamic_rewire_rate", float(config["dynamic_rewire_rate"]))
     _assert_probability("homophily_threshold", float(config["homophily_threshold"]))
+    if not isinstance(config.get("enable_churn"), bool):
+        raise ValueError("enable_churn must be a boolean")
+    if float(config["churn_weight"]) < 0.0:
+        raise ValueError("churn_weight must be >= 0")
     _assert_probability("diversity_ratio", float(config["diversity_ratio"]))
     _assert_probability("lambda_penalty", float(config["lambda_penalty"]))
     _assert_probability("virality_dampening", float(config["virality_dampening"]))
@@ -290,11 +301,33 @@ def _network_rewiring_step(
     )
 
 
-def _churn_step() -> None:
-    """Placeholder for Phase 4 churn logic."""
-    # STUB: Phase 4 — Churn step
-    # See implementation plan Phase 4, Step 4.2 for full implementation.
-    pass
+def _churn_step(
+    G: Any,
+    agents: list[Agent],
+    enable_churn: bool,
+    churn_base: float,
+    churn_weight: float,
+    seed: int,
+) -> None:
+    """Agent churn: dissatisfied agents may leave the platform (Phase 4 Step 4.2).
+
+    Dissatisfaction = mean opinion distance to predecessors.
+    Churn probability = sigmoid(churn_base + churn_weight * dissatisfaction).
+    Churned agents become inactive and are removed from the graph.
+    """
+    if not enable_churn:
+        return
+
+    rng = random.Random(seed)
+    for agent in agents:
+        if not agent.is_active:
+            continue
+
+        dissatisfaction = compute_dissatisfaction(agent, G)
+        p_churn = _sigmoid(churn_base + churn_weight * dissatisfaction)
+        if rng.random() < p_churn:
+            agent.is_active = False
+            G.remove_node(agent.id)
 
 
 def _bot_detection_step() -> None:
@@ -377,6 +410,9 @@ def run_simulation(
     cf_blend_ratio = float(merged_config["cf_blend_ratio"])
     dynamic_rewire_rate = float(merged_config["dynamic_rewire_rate"])
     homophily_threshold = float(merged_config["homophily_threshold"])
+    enable_churn = bool(merged_config["enable_churn"])
+    churn_base = float(merged_config["churn_base"])
+    churn_weight = float(merged_config["churn_weight"])
 
     for tick in range(total_ticks):
         active_agents = [agent for agent in agents if agent.is_active]
@@ -608,20 +644,45 @@ def run_simulation(
         # Rebuild cached neighbor structures after potential rewiring.
         if dynamic_rewire_rate > 0.0:
             predecessor_ids_by_agent = {
-                agent.id: get_predecessors(G, agent.id) for agent in agents
+                a.id: get_predecessors(G, a.id) for a in active_agents if a.id in G
             }
             neighbors_by_agent = {
-                agent.id: [
-                    G.nodes[node_id]["agent"] for node_id in predecessor_ids_by_agent[agent.id]
+                a.id: [
+                    G.nodes[node_id]["agent"]
+                    for node_id in predecessor_ids_by_agent.get(a.id, [])
                 ]
-                for agent in agents
+                for a in active_agents if a.id in G
             }
             influence_weights_by_agent = {
-                agent.id: get_influence_weights(G, agent.id) for agent in agents
+                a.id: get_influence_weights(G, a.id) for a in active_agents if a.id in G
             }
 
-        # Step 7: CHURN CHECK (MVP stub)
-        _churn_step()
+        # Step 7: CHURN CHECK
+        _churn_step(
+            G=G,
+            agents=agents,
+            enable_churn=enable_churn,
+            churn_base=churn_base,
+            churn_weight=churn_weight,
+            seed=base_seed + tick * 1_000_099,
+        )
+
+        # Rebuild cached structures if churn removed any nodes.
+        if enable_churn:
+            # Only cache agents whose nodes still exist in the graph.
+            surviving = [a for a in agents if a.is_active and a.id in G]
+            predecessor_ids_by_agent = {
+                a.id: get_predecessors(G, a.id) for a in surviving
+            }
+            neighbors_by_agent = {
+                a.id: [
+                    G.nodes[node_id]["agent"] for node_id in predecessor_ids_by_agent[a.id]
+                ]
+                for a in surviving
+            }
+            influence_weights_by_agent = {
+                a.id: get_influence_weights(G, a.id) for a in surviving
+            }
 
         # Step 8: BOT DETECTION (MVP stub)
         _bot_detection_step()

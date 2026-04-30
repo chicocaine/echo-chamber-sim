@@ -391,10 +391,29 @@ def rewire_step(
             renormalize_weights(G, new_follow.id)
 
 
+def compute_dissatisfaction(agent: Agent, G: nx.DiGraph) -> float:
+    """Mean opinion distance to predecessors (influence sources).
+
+    High disagreement with who an agent listens to drives churn.
+    Returns 0.0 when the agent has no predecessors.
+    """
+    preds = get_predecessors(G, agent.id)
+    if not preds:
+        return 0.0
+
+    total_distance = 0.0
+    for source_id in preds:
+        source_agent = G.nodes[source_id].get("agent")
+        if source_agent is not None:
+            total_distance += abs(agent.opinion - source_agent.opinion)
+    return total_distance / len(preds)
+
+
 __all__ = [
     "assign_agents_to_graph",
     "build_network",
     "build_network_from_size",
+    "compute_dissatisfaction",
     "compute_edge_weights",
     "get_graph_snapshot",
     "get_influence_weights",

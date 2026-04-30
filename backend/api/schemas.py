@@ -39,6 +39,9 @@ class SimConfig(BaseModel):
     cf_blend_ratio: float = 0.5
     dynamic_rewire_rate: float = 0.01
     homophily_threshold: float = 0.3
+    enable_churn: bool = False
+    churn_base: float = -4.0
+    churn_weight: float = 1.0
     diversity_ratio: float = 0.0
     lambda_penalty: float = 0.0
     virality_dampening: float = 0.0
@@ -84,6 +87,9 @@ class SimConfig(BaseModel):
         for name, value in probability_fields.items():
             if not 0.0 <= value <= 1.0:
                 raise ValueError(f"{name} must be in [0, 1]")
+
+        if self.churn_weight < 0.0:
+            raise ValueError("churn_weight must be >= 0")
 
         for agent_type, fraction in self.agent_mix.items():
             if not 0.0 <= fraction <= 1.0:
