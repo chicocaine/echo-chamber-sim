@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 RecommenderType = Literal["content_based", "cf", "graph", "hybrid"]
+TopologyType = Literal["watts_strogatz", "barabasi_albert", "erdos_renyi", "stochastic_block"]
 
 
 class SimConfig(BaseModel):
@@ -15,6 +16,9 @@ class SimConfig(BaseModel):
     N: int = 200
     avg_degree: int = 16
     rewire_prob: float = 0.1
+    topology: TopologyType = "watts_strogatz"
+    community_sizes: list[int] | None = None
+    community_p: list[list[float]] | None = None
     T: int = 200
     snapshot_interval: int = 6
     alpha: float = 0.65
@@ -87,6 +91,14 @@ class SimConfig(BaseModel):
         for name, value in probability_fields.items():
             if not 0.0 <= value <= 1.0:
                 raise ValueError(f"{name} must be in [0, 1]")
+
+        if self.topology == "stochastic_block":
+            if self.community_sizes is None or self.community_p is None:
+                raise ValueError("community_sizes and community_p required for stochastic_block")
+            if sum(self.community_sizes) != self.N:
+                raise ValueError(
+                    f"community_sizes must sum to N ({self.N}), got {sum(self.community_sizes)}"
+                )
 
         if self.churn_weight < 0.0:
             raise ValueError("churn_weight must be >= 0")

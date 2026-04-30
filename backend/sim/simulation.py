@@ -60,6 +60,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "N": 200,
     "avg_degree": 16,
     "rewire_prob": 0.1,
+    "topology": "watts_strogatz",
+    "community_sizes": None,
+    "community_p": None,
     "T": 200,
     "snapshot_interval": 6,
     "alpha": 0.65,
@@ -179,6 +182,7 @@ def _validate_config(config: dict[str, Any]) -> None:
         "N",
         "avg_degree",
         "rewire_prob",
+        "topology",
         "T",
         "snapshot_interval",
         "alpha",
@@ -221,6 +225,16 @@ def _validate_config(config: dict[str, Any]) -> None:
         raise ValueError("avg_degree must be > 0")
 
     _assert_probability("rewire_prob", float(config["rewire_prob"]))
+    topology = str(config["topology"])
+    if topology not in {"watts_strogatz", "barabasi_albert", "erdos_renyi", "stochastic_block"}:
+        raise ValueError(f"Unknown topology: {topology}")
+    if topology == "stochastic_block":
+        sizes = config.get("community_sizes")
+        p_mat = config.get("community_p")
+        if sizes is None or p_mat is None:
+            raise ValueError("community_sizes and community_p required for stochastic_block")
+        if not isinstance(sizes, list) or not isinstance(p_mat, list):
+            raise ValueError("community_sizes and community_p must be lists")
     _assert_probability("alpha", float(config["alpha"]))
     _assert_probability("beta_pop", float(config["beta_pop"]))
     _assert_probability("sir_beta", float(config["sir_beta"]))
@@ -368,11 +382,17 @@ def run_simulation(
         initial_opinion_distribution=str(merged_config["initial_opinion_distribution"]),
         arousal_tolerance_effect=float(merged_config["arousal_tolerance_effect"]),
     )
+    topology = str(merged_config["topology"])
+    community_sizes = merged_config.get("community_sizes")
+    community_p = merged_config.get("community_p")
     G = build_network(
         agents=agents,
         avg_degree=int(merged_config["avg_degree"]),
         rewire_prob=float(merged_config["rewire_prob"]),
         seed=int(merged_config["seed"]),
+        topology=topology,
+        community_sizes=list(community_sizes) if community_sizes is not None else None,
+        community_p=[list(row) for row in community_p] if community_p is not None else None,
     )
 
     content_id_counter = 0

@@ -93,24 +93,64 @@ def initialize_edge_weights(G: nx.DiGraph, agents: list[Agent] | None = None) ->
             G[source_id][agent_id]["weight"] = weight
 
 
+def _build_base_graph(
+    n_agents: int,
+    avg_degree: int,
+    rewire_prob: float,
+    topology: str = "watts_strogatz",
+    community_sizes: list[int] | None = None,
+    community_p: list[list[float]] | None = None,
+    seed: int | None = None,
+) -> nx.Graph:
+    """Build the base undirected graph for the requested topology (Phase 4 Step 4.3)."""
+    if topology == "watts_strogatz":
+        return nx.watts_strogatz_graph(n=n_agents, k=avg_degree, p=rewire_prob, seed=seed)
+    elif topology == "barabasi_albert":
+        m = max(1, int(avg_degree / 2))
+        return nx.barabasi_albert_graph(n=n_agents, m=m, seed=seed)
+    elif topology == "erdos_renyi":
+        p = min(1.0, avg_degree / max(1, n_agents))
+        return nx.erdos_renyi_graph(n=n_agents, p=p, seed=seed)
+    elif topology == "stochastic_block":
+        if not community_sizes or not community_p:
+            raise ValueError(
+                "community_sizes and community_p are required for stochastic_block topology"
+            )
+        if sum(community_sizes) != n_agents:
+            raise ValueError(
+                f"community_sizes must sum to n_agents ({n_agents}), got {sum(community_sizes)}"
+            )
+        return nx.stochastic_block_model(community_sizes, community_p, seed=seed)
+    else:
+        raise ValueError(f"Unknown topology: {topology}")
+
+
 def build_network(
     agents: list[Agent],
     avg_degree: int = DEFAULT_AVG_DEGREE,
     rewire_prob: float = DEFAULT_REWIRE_PROB,
     seed: int | None = None,
+    topology: str = "watts_strogatz",
+    community_sizes: list[int] | None = None,
+    community_p: list[list[float]] | None = None,
 ) -> nx.DiGraph:
-    """Build a directed Watts-Strogatz graph and attach agents.
+    """Build a directed social graph and attach agents.
 
-    The undirected base graph is converted to ``nx.DiGraph`` so each undirected
+    Supports multiple topologies (Phase 4 Step 4.3).
+    The base undirected graph is converted to ``nx.DiGraph`` so each undirected
     edge becomes two directed edges, matching the simulation's information-flow model.
     """
     n_agents = len(agents)
-    _validate_graph_params(n_agents=n_agents, avg_degree=avg_degree, rewire_prob=rewire_prob)
+    if topology == "watts_strogatz":
+        _validate_graph_params(n_agents=n_agents, avg_degree=avg_degree, rewire_prob=rewire_prob)
 
-    undirected_graph = nx.watts_strogatz_graph(
-        n=n_agents,
-        k=avg_degree,
-        p=rewire_prob,
+    undirected_graph = _build_base_graph(
+        n_agents=n_agents,
+        avg_degree=avg_degree,
+        rewire_prob=rewire_prob,
+        topology=topology,
+        community_sizes=community_sizes,
+        community_p=community_p,
         seed=seed,
     )
     G = nx.DiGraph(undirected_graph)
