@@ -145,6 +145,89 @@ class ContentBasedRecommender(BaseRecommender):
         )
 
 
+class CollaborativeFilteringRecommender(BaseRecommender):
+    """Recommender based on peer engagement (Phase 3 Step 3.3).
+
+    Clusters agents by opinion similarity (|opinion_i - opinion_j| < 0.2)
+    and recommends content that peer agents have shared. Falls back to
+    ideological similarity scoring when an agent has no peers.
+    """
+
+    PEER_THRESHOLD: float = 0.2
+
+    def __init__(self) -> None:
+        self._agents: list["Agent"] = []
+        self._shared_content: dict[int, list["Content"]] = {}
+
+    def update_context(
+        self,
+        agents: list["Agent"],
+        shared_content: dict[int, list["Content"]],
+    ) -> None:
+        """Update the peer graph and engagement data for the current tick.
+
+        Must be called before generate_feed() each tick.
+        """
+        self._agents = agents
+        self._shared_content = shared_content
+
+    def score(self, content: "Content", agent: "Agent") -> float:
+        """Per-item score fallback — ideological similarity.
+
+        CF scoring requires peer context; the full scoring is in generate_feed().
+        """
+        return 1.0 - abs(content.ideological_score - agent.opinion)
+
+    def generate_feed(
+        self,
+        agent: "Agent",
+        candidate_pool: list["Content"],
+        k_exp: int,
+    ) -> list["Content"]:
+        """Generate feed using peer-shared content signals.
+
+        For each candidate item, finds the best peer match and scores by
+        (1 - opinion_distance) * virality. Falls back to ideological similarity
+        ranking when the agent has no peers within the threshold.
+        """
+        if not candidate_pool:
+            return []
+
+        peers = [
+            a
+            for a in self._agents
+            if a.id != agent.id
+            and abs(a.opinion - agent.opinion) < self.PEER_THRESHOLD
+            and a.is_active
+        ]
+
+        if not peers:
+            scored = [(self.score(c, agent), c) for c in candidate_pool]
+            scored.sort(key=lambda item: item[0], reverse=True)
+            return [c for _, c in scored[:k_exp]]
+
+        # Build reverse index: content_id -> peers who shared it
+        peer_engaged: dict[int, list["Agent"]] = {}
+        for peer in peers:
+            for content in self._shared_content.get(peer.id, []):
+                peer_engaged.setdefault(content.id, []).append(peer)
+
+        scored: list[tuple[float, "Content"]] = []
+        for content in candidate_pool:
+            engagers = peer_engaged.get(content.id)
+            if engagers:
+                best = max(
+                    (1.0 - abs(agent.opinion - p.opinion)) * content.virality
+                    for p in engagers
+                )
+            else:
+                best = 0.0
+            scored.append((best, content))
+
+        scored.sort(key=lambda item: item[0], reverse=True)
+        return [c for _, c in scored[:k_exp]]
+
+
 @profile
 def generate_feed_vectorized(
     agent: "Agent",
@@ -218,6 +301,7 @@ def generate_feed_vectorized(
 
 __all__ = [
     "BaseRecommender",
+    "CollaborativeFilteringRecommender",
     "ContentBasedRecommender",
     "generate_feed_vectorized",
 ]
