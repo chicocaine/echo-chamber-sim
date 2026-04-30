@@ -10,7 +10,7 @@ from .network import (
 	get_successors,
 )
 from .metrics import compute_all_metrics
-from .recommender import generate_feed
+from .recommender import BaseRecommender, ContentBasedRecommender, generate_feed_vectorized
 from .simulation import run_simulation
 
 __all__ = [
@@ -26,7 +26,9 @@ __all__ = [
 	"get_influence_weights",
 	"get_predecessors",
 	"get_successors",
-	"generate_feed",
+	"BaseRecommender",
+	"ContentBasedRecommender",
+	"generate_feed_vectorized",
 	"initialize_agents",
 	"maybe_generate_content",
 	"run_simulation",
