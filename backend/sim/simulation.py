@@ -808,7 +808,13 @@ def run_simulation(
 
         # Step 9: METRIC LOGGING
         if tick % snapshot_interval == 0:
-            snapshots.append(compute_all_metrics(G, agents, tick=tick))
+            snapshots.append(
+                compute_all_metrics(
+                    G, agents, tick=tick,
+                    shared_content=shared_content,
+                    consumed_items=consumed_items,
+                )
+            )
 
         # Required for later bot-detection signal calculations.
         for agent in active_agents:

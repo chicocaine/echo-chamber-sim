@@ -9,7 +9,7 @@ from .network import (
 	get_predecessors,
 	get_successors,
 )
-from .metrics import compute_all_metrics
+from .metrics import compute_all_metrics, compute_ies
 from .recommender import BaseRecommender, CollaborativeFilteringRecommender, ContentBasedRecommender, GraphBasedRecommender, generate_feed_vectorized
 from .simulation import run_simulation
 
@@ -22,6 +22,7 @@ __all__ = [
 	"create_agent",
 	"generate_content_item",
 	"compute_all_metrics",
+	"compute_ies",
 	"get_graph_snapshot",
 	"get_influence_weights",
 	"get_predecessors",

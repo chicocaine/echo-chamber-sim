@@ -124,7 +124,7 @@ class SimConfig(BaseModel):
 
 
 class MetricSnapshot(BaseModel):
-    """Metric values logged at a simulation tick."""
+    """Metric values logged at a simulation tick (Phase 6 Step 6.1)."""
 
     tick: int
     opinion_variance: float
@@ -132,6 +132,11 @@ class MetricSnapshot(BaseModel):
     assortativity: float
     opinion_entropy: float
     misinfo_prevalence: float
+    ei_index: float = 0.0
+    modularity_q: float = 0.0
+    cascade_mean: float | None = None
+    cascade_max: int | None = None
+    exposure_disparity: float | None = None
 
 
 class SimResult(BaseModel):
