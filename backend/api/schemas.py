@@ -32,6 +32,7 @@ class SimConfig(BaseModel):
     )
     sir_beta: float = 0.3
     sir_gamma: float = 0.05
+    reinforcement_factor: float = 0.0
     initial_opinion_distribution: Literal["uniform", "bimodal"] = "uniform"
     emotional_decay: float = 0.85
     arousal_share_weight: float = 0.3
@@ -59,6 +60,7 @@ class SimConfig(BaseModel):
             "beta_pop": self.beta_pop,
             "sir_beta": self.sir_beta,
             "sir_gamma": self.sir_gamma,
+            "reinforcement_factor": self.reinforcement_factor,
             "emotional_decay": self.emotional_decay,
             "arousal_share_weight": self.arousal_share_weight,
             "valence_share_weight": self.valence_share_weight,

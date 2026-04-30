@@ -70,6 +70,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
     "sir_beta": 0.3,
     "sir_gamma": 0.05,
+    "reinforcement_factor": 0.0,
     "initial_opinion_distribution": "uniform",
     "emotional_decay": 0.85,
     "arousal_share_weight": 0.3,
@@ -167,6 +168,7 @@ def _validate_config(config: dict[str, Any]) -> None:
         "agent_mix",
         "sir_beta",
         "sir_gamma",
+        "reinforcement_factor",
         "initial_opinion_distribution",
         "emotional_decay",
         "arousal_share_weight",
@@ -194,6 +196,7 @@ def _validate_config(config: dict[str, Any]) -> None:
     _assert_probability("beta_pop", float(config["beta_pop"]))
     _assert_probability("sir_beta", float(config["sir_beta"]))
     _assert_probability("sir_gamma", float(config["sir_gamma"]))
+    _assert_probability("reinforcement_factor", float(config["reinforcement_factor"]))
     _assert_probability("emotional_decay", float(config["emotional_decay"]))
     _assert_probability("arousal_share_weight", float(config["arousal_share_weight"]))
     _assert_probability("valence_share_weight", float(config["valence_share_weight"]))
@@ -312,6 +315,7 @@ def run_simulation(
     beta_pop = float(merged_config["beta_pop"])
     sir_beta = float(merged_config["sir_beta"])
     sir_gamma = float(merged_config["sir_gamma"])
+    reinforcement_factor = float(merged_config["reinforcement_factor"])
     emotional_decay = float(merged_config["emotional_decay"])
     arousal_share_weight = float(merged_config["arousal_share_weight"])
     valence_share_weight = float(merged_config["valence_share_weight"])
@@ -415,21 +419,31 @@ def run_simulation(
             agent.opinion = float(new_opinions.get(agent.id, agent.opinion))
             agent.emotional_arousal = float(new_arousals.get(agent.id, 0.0))
 
-        # SIR transitions (triggered by misinformation in consumed feed).
+        # SIR transitions with exposure-count reinforcement (Phase 2b Step 2b.2).
         for agent in active_agents:
             if agent.sir_state == "S":
                 feed = consumed_items.get(agent.id, [])
                 if not feed:
                     continue
-                misinfo_count = sum(1 for content in feed if content.is_misinformation)
-                if misinfo_count <= 0:
+                misinfo_items = [c for c in feed if c.is_misinformation]
+                if not misinfo_items:
                     continue
 
-                # Exposure-scaled infection risk avoids immediate saturation at tick 0
-                # while preserving higher risk under heavier misinformation exposure.
-                misinfo_fraction = misinfo_count / max(1, len(feed))
-                infection_prob = sir_beta * misinfo_fraction
-                if py_rng.random() < infection_prob:
+                should_infect = False
+                for content in misinfo_items:
+                    agent.exposure_count[content.id] = (
+                        agent.exposure_count.get(content.id, 0) + 1
+                    )
+                    n_exposures = agent.exposure_count[content.id]
+                    effective_beta = sir_beta * (
+                        1.0 + n_exposures * reinforcement_factor
+                    )
+                    effective_beta = min(effective_beta, 1.0)
+                    if py_rng.random() < effective_beta:
+                        should_infect = True
+                        break
+
+                if should_infect:
                     agent.sir_state = "I"
             elif agent.sir_state == "I":
                 if py_rng.random() < sir_gamma:
