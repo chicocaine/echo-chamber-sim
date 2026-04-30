@@ -37,6 +37,8 @@ class SimConfig(BaseModel):
     reinforcement_factor: float = 0.0
     recommender_type: RecommenderType = "content_based"
     cf_blend_ratio: float = 0.5
+    dynamic_rewire_rate: float = 0.01
+    homophily_threshold: float = 0.3
     diversity_ratio: float = 0.0
     lambda_penalty: float = 0.0
     virality_dampening: float = 0.0
@@ -69,6 +71,8 @@ class SimConfig(BaseModel):
             "sir_gamma": self.sir_gamma,
             "reinforcement_factor": self.reinforcement_factor,
             "cf_blend_ratio": self.cf_blend_ratio,
+            "dynamic_rewire_rate": self.dynamic_rewire_rate,
+            "homophily_threshold": self.homophily_threshold,
             "diversity_ratio": self.diversity_ratio,
             "lambda_penalty": self.lambda_penalty,
             "virality_dampening": self.virality_dampening,

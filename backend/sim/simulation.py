@@ -22,6 +22,7 @@ from .network import (
     get_graph_snapshot,
     get_influence_weights,
     get_predecessors,
+    rewire_step,
 )
 from .recommender import (
     CollaborativeFilteringRecommender,
@@ -78,6 +79,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "reinforcement_factor": 0.0,
     "recommender_type": "content_based",
     "cf_blend_ratio": 0.5,
+    "dynamic_rewire_rate": 0.01,
+    "homophily_threshold": 0.3,
     "diversity_ratio": 0.0,
     "lambda_penalty": 0.0,
     "virality_dampening": 0.0,
@@ -183,6 +186,8 @@ def _validate_config(config: dict[str, Any]) -> None:
         "reinforcement_factor",
         "recommender_type",
         "cf_blend_ratio",
+        "dynamic_rewire_rate",
+        "homophily_threshold",
         "diversity_ratio",
         "lambda_penalty",
         "virality_dampening",
@@ -215,6 +220,8 @@ def _validate_config(config: dict[str, Any]) -> None:
     _assert_probability("sir_gamma", float(config["sir_gamma"]))
     _assert_probability("reinforcement_factor", float(config["reinforcement_factor"]))
     _assert_probability("cf_blend_ratio", float(config["cf_blend_ratio"]))
+    _assert_probability("dynamic_rewire_rate", float(config["dynamic_rewire_rate"]))
+    _assert_probability("homophily_threshold", float(config["homophily_threshold"]))
     _assert_probability("diversity_ratio", float(config["diversity_ratio"]))
     _assert_probability("lambda_penalty", float(config["lambda_penalty"]))
     _assert_probability("virality_dampening", float(config["virality_dampening"]))
@@ -259,11 +266,28 @@ def _sigmoid(value: float) -> float:
     return z / (1.0 + z)
 
 
-def _network_rewiring_step() -> None:
-    """Placeholder for Phase 4 rewiring logic."""
-    # STUB: Phase 4 — Network rewiring step
-    # See implementation plan Phase 4, Step 4.1 for full implementation.
-    pass
+def _network_rewiring_step(
+    G: Any,
+    agents: list[Agent],
+    dynamic_rewire_rate: float,
+    homophily_threshold: float,
+    base_seed: int,
+    tick: int,
+) -> None:
+    """Dynamic edge rewiring (Phase 4 Step 4.1).
+
+    Agents probabilistically unfollow disagreeing peers and follow new agents
+    with similar opinions within homophily_threshold.
+    """
+    if dynamic_rewire_rate <= 0.0:
+        return
+    rewire_step(
+        G=G,
+        agents=agents,
+        dynamic_rewire_rate=dynamic_rewire_rate,
+        homophily_threshold=homophily_threshold,
+        seed=base_seed + tick * 1_000_033,
+    )
 
 
 def _churn_step() -> None:
@@ -351,6 +375,8 @@ def run_simulation(
     valence_share_weight = float(merged_config["valence_share_weight"])
     recommender_type = str(merged_config["recommender_type"])
     cf_blend_ratio = float(merged_config["cf_blend_ratio"])
+    dynamic_rewire_rate = float(merged_config["dynamic_rewire_rate"])
+    homophily_threshold = float(merged_config["homophily_threshold"])
 
     for tick in range(total_ticks):
         active_agents = [agent for agent in agents if agent.is_active]
@@ -569,8 +595,30 @@ def run_simulation(
                 if py_rng.random() < sir_gamma:
                     agent.sir_state = "R"
 
-        # Step 6: NETWORK REWIRING (MVP stub)
-        _network_rewiring_step()
+        # Step 6: NETWORK REWIRING
+        _network_rewiring_step(
+            G=G,
+            agents=agents,
+            dynamic_rewire_rate=dynamic_rewire_rate,
+            homophily_threshold=homophily_threshold,
+            base_seed=base_seed,
+            tick=tick,
+        )
+
+        # Rebuild cached neighbor structures after potential rewiring.
+        if dynamic_rewire_rate > 0.0:
+            predecessor_ids_by_agent = {
+                agent.id: get_predecessors(G, agent.id) for agent in agents
+            }
+            neighbors_by_agent = {
+                agent.id: [
+                    G.nodes[node_id]["agent"] for node_id in predecessor_ids_by_agent[agent.id]
+                ]
+                for agent in agents
+            }
+            influence_weights_by_agent = {
+                agent.id: get_influence_weights(G, agent.id) for agent in agents
+            }
 
         # Step 7: CHURN CHECK (MVP stub)
         _churn_step()

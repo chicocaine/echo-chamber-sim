@@ -282,6 +282,115 @@ def get_graph_snapshot(G: nx.DiGraph) -> dict[str, Any]:
     }
 
 
+def renormalize_weights(G: nx.DiGraph, agent_id: int) -> None:
+    """Recompute normalized incoming edge weights for one agent.
+
+    Called after any edge add/remove that changes ``agent_id``'s predecessor set.
+    Uses uniform 1/in_degree by default; uses ``compute_edge_weights`` for
+    influencer agents whose ``influence_weight_multiplier != 1.0``.
+
+    Per the directed graph convention:
+    - Opinion updates consume INCOMING weights (predecessors -> agent_id).
+    - Normalize incoming weights for agent_id, NOT outgoing.
+    - After G.remove_edge(u, v): call renormalize_weights(G, v).
+    - After G.add_edge(u, v): call renormalize_weights(G, v).
+    - Never call on u — u's incoming weights are unaffected.
+    """
+    preds = list(G.predecessors(agent_id))
+    if not preds:
+        return
+
+    # Check if this node's agent uses non-uniform influence weights.
+    node_agent = G.nodes[agent_id].get("agent")
+    if node_agent is not None and hasattr(node_agent, "influence_weight_multiplier"):
+        multiplier = float(node_agent.influence_weight_multiplier)
+    else:
+        multiplier = 1.0
+
+    if multiplier != 1.0:
+        # Recompute using the full weight formula for non-uniform agents.
+        agents_list = [
+            G.nodes[nid]["agent"] for nid in preds if "agent" in G.nodes[nid]
+        ]
+        if len(agents_list) == len(preds):
+            weights = compute_edge_weights(G, agent_id, agents_list)
+            for source_id, weight in weights.items():
+                G[source_id][agent_id]["weight"] = weight
+            return
+
+    # Uniform weight strategy.
+    uniform = 1.0 / len(preds)
+    for source_id in preds:
+        G[source_id][agent_id]["weight"] = uniform
+
+
+def rewire_step(
+    G: nx.DiGraph,
+    agents: list[Agent],
+    dynamic_rewire_rate: float,
+    homophily_threshold: float,
+    seed: int | None = None,
+) -> None:
+    """Dynamic edge rewiring: agents unfollow disagreeing peers and follow similar ones.
+
+    Each active agent, with probability ``dynamic_rewire_rate``, evaluates its
+    outgoing edges (who it follows). The successor with the largest opinion
+    distance beyond ``homophily_threshold`` is unfollowed, and a new agent
+    within the threshold is followed instead.
+
+    Directed graph convention (Phase 4 Step 4.1):
+    - Rewiring changes OUTGOING edges (who this agent follows = successors).
+    - After remove_edge(agent, worst): renormalize_weights(G, worst).
+    - After add_edge(agent, new_follow): renormalize_weights(G, new_follow).
+    """
+    if dynamic_rewire_rate <= 0.0:
+        return
+
+    rng = random.Random(seed)
+    agent_map = {a.id: a for a in agents}
+
+    for agent in agents:
+        if not agent.is_active:
+            continue
+
+        if rng.random() >= dynamic_rewire_rate:
+            continue
+
+        following_ids = get_successors(G, agent.id)
+        if not following_ids:
+            continue
+
+        # Find the followed agent with the largest opinion distance.
+        worst_id = max(
+            following_ids,
+            key=lambda nid: abs(agent_map[nid].opinion - agent.opinion),
+        )
+        worst_agent = agent_map[worst_id]
+        if abs(worst_agent.opinion - agent.opinion) <= homophily_threshold:
+            continue
+
+        # Unfollow.
+        G.remove_edge(agent.id, worst_id)
+        renormalize_weights(G, worst_id)
+
+        # Find a new agent within homophily_threshold to follow.
+        current_following = set(get_successors(G, agent.id))
+        candidates = [
+            a
+            for a in agents
+            if a.id != agent.id
+            and a.id not in current_following
+            and a.is_active
+            and abs(a.opinion - agent.opinion) <= homophily_threshold
+        ]
+        if candidates:
+            new_follow = rng.choice(candidates)
+            G.add_edge(agent.id, new_follow.id)
+            # Initialize edge weight for the new connection.
+            G[agent.id][new_follow.id]["weight"] = 1.0
+            renormalize_weights(G, new_follow.id)
+
+
 __all__ = [
     "assign_agents_to_graph",
     "build_network",
@@ -292,4 +401,6 @@ __all__ = [
     "get_predecessors",
     "get_successors",
     "initialize_edge_weights",
+    "renormalize_weights",
+    "rewire_step",
 ]
