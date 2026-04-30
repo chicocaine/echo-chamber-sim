@@ -71,6 +71,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "sir_beta": 0.3,
     "sir_gamma": 0.05,
     "reinforcement_factor": 0.0,
+    "diversity_ratio": 0.0,
+    "lambda_penalty": 0.0,
+    "virality_dampening": 0.0,
     "initial_opinion_distribution": "uniform",
     "emotional_decay": 0.85,
     "arousal_share_weight": 0.3,
@@ -94,12 +97,13 @@ def _process_agent_tick(
     emotional_decay: float,
     arousal_share_weight: float,
     valence_share_weight: float,
+    virality_dampening: float,
     random_seed: int,
 ) -> tuple[int, float, float, list[Content]]:
     """Process Step 3/4/5 for one agent without shared-state mutation.
 
     Step 3: Content consumption with arousal update (Phase 2).
-    Step 4: Sharing decision.
+    Step 4: Sharing decision (Phase 2 + Phase 3 virality dampening).
     Step 5: Opinion update.
     """
     # Step 3: CONTENT CONSUMPTION — update arousal per content item (Phase 2 Step 2.1)
@@ -121,10 +125,11 @@ def _process_agent_tick(
             shared.append(content)
             continue
 
+        effective_w_v = valence_share_weight * (1.0 - virality_dampening)
         share_probability = _sigmoid(
             SHARE_BASE_LOGIT
             + arousal_share_weight * new_arousal
-            + valence_share_weight * float(content.emotional_valence)
+            + effective_w_v * float(content.emotional_valence)
         )
         if local_rng.random() < share_probability:
             shared.append(content)
@@ -169,6 +174,9 @@ def _validate_config(config: dict[str, Any]) -> None:
         "sir_beta",
         "sir_gamma",
         "reinforcement_factor",
+        "diversity_ratio",
+        "lambda_penalty",
+        "virality_dampening",
         "initial_opinion_distribution",
         "emotional_decay",
         "arousal_share_weight",
@@ -197,6 +205,9 @@ def _validate_config(config: dict[str, Any]) -> None:
     _assert_probability("sir_beta", float(config["sir_beta"]))
     _assert_probability("sir_gamma", float(config["sir_gamma"]))
     _assert_probability("reinforcement_factor", float(config["reinforcement_factor"]))
+    _assert_probability("diversity_ratio", float(config["diversity_ratio"]))
+    _assert_probability("lambda_penalty", float(config["lambda_penalty"]))
+    _assert_probability("virality_dampening", float(config["virality_dampening"]))
     _assert_probability("emotional_decay", float(config["emotional_decay"]))
     _assert_probability("arousal_share_weight", float(config["arousal_share_weight"]))
     _assert_probability("valence_share_weight", float(config["valence_share_weight"]))
@@ -316,6 +327,9 @@ def run_simulation(
     sir_beta = float(merged_config["sir_beta"])
     sir_gamma = float(merged_config["sir_gamma"])
     reinforcement_factor = float(merged_config["reinforcement_factor"])
+    diversity_ratio = float(merged_config["diversity_ratio"])
+    lambda_penalty = float(merged_config["lambda_penalty"])
+    virality_dampening = float(merged_config["virality_dampening"])
     emotional_decay = float(merged_config["emotional_decay"])
     arousal_share_weight = float(merged_config["arousal_share_weight"])
     valence_share_weight = float(merged_config["valence_share_weight"])
@@ -356,14 +370,22 @@ def run_simulation(
                 dtype=np.float64,
                 count=len(candidate_pool),
             )
+            content_misinfo_array = np.fromiter(
+                (content.misinfo_score for content in candidate_pool),
+                dtype=np.float64,
+                count=len(candidate_pool),
+            )
             feed = generate_feed_vectorized(
                 agent=agent,
                 candidate_pool=candidate_pool,
                 content_ideo_array=content_ideo_array,
                 content_virality_array=content_virality_array,
+                content_misinfo_array=content_misinfo_array,
                 k_exp=k_exp,
                 alpha=alpha,
                 beta_pop=beta_pop,
+                lambda_penalty=lambda_penalty,
+                diversity_ratio=diversity_ratio,
             )
             return (agent.id, feed)
 
@@ -383,6 +405,7 @@ def run_simulation(
                     emotional_decay=emotional_decay,
                     arousal_share_weight=arousal_share_weight,
                     valence_share_weight=valence_share_weight,
+                    virality_dampening=virality_dampening,
                     random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
                 )
                 for agent in active_agents
@@ -398,6 +421,7 @@ def run_simulation(
                     emotional_decay=emotional_decay,
                     arousal_share_weight=arousal_share_weight,
                     valence_share_weight=valence_share_weight,
+                    virality_dampening=virality_dampening,
                     random_seed=_agent_tick_seed(base_seed=base_seed, tick=tick, agent_id=agent.id),
                 )
                 for agent in active_agents
