@@ -15,7 +15,12 @@ from joblib import Parallel, delayed
 import numpy as np
 
 from .agent import Agent, initialize_agents
-from .content import Content, maybe_generate_content
+from .content import (
+    CAMPAIGN_EXPIRY_DELTA,
+    Content,
+    get_effective_misinfo_score,
+    maybe_generate_content,
+)
 from .metrics import compute_all_metrics
 from .network import (
     build_network,
@@ -396,6 +401,7 @@ def run_simulation(
     )
 
     content_id_counter = 0
+    campaign_expiry: dict[int, int] = {}
     previous_shared_content: dict[int, list[Content]] = {}
     snapshots: list[dict[str, Any]] = []
 
@@ -448,6 +454,10 @@ def run_simulation(
             )
             if maybe_content is not None:
                 current_tick_pool.append(maybe_content)
+                # Register new campaigns for expiry tracking.
+                cid = maybe_content.coordinated_campaign_id
+                if cid is not None and cid not in campaign_expiry:
+                    campaign_expiry[cid] = tick + CAMPAIGN_EXPIRY_DELTA
                 content_id_counter += 1
 
         # Step 2: FEED GENERATION
@@ -621,22 +631,33 @@ def run_simulation(
             agent.opinion = float(new_opinions.get(agent.id, agent.opinion))
             agent.emotional_arousal = float(new_arousals.get(agent.id, 0.0))
 
-        # SIR transitions with exposure-count reinforcement (Phase 2b Step 2b.2).
+        # SIR transitions with exposure-count reinforcement (Phase 2b + Phase 5 Step 5.1).
         for agent in active_agents:
             if agent.sir_state == "S":
                 feed = consumed_items.get(agent.id, [])
                 if not feed:
                     continue
-                misinfo_items = [c for c in feed if c.is_misinformation]
+                # Use effective misinfo score to detect misinfo (accounts for
+                # campaign expiry and satire/literacy interaction).
+                misinfo_items = [
+                    c
+                    for c in feed
+                    if get_effective_misinfo_score(
+                        c, tick, campaign_expiry, agent.media_literacy
+                    )
+                    > 0.5
+                ]
                 if not misinfo_items:
                     continue
 
                 should_infect = False
                 for content in misinfo_items:
-                    agent.exposure_count[content.id] = (
-                        agent.exposure_count.get(content.id, 0) + 1
+                    # Track exposure by campaign (preferred) or content ID.
+                    exposure_key = content.coordinated_campaign_id or content.id
+                    agent.exposure_count[exposure_key] = (
+                        agent.exposure_count.get(exposure_key, 0) + 1
                     )
-                    n_exposures = agent.exposure_count[content.id]
+                    n_exposures = agent.exposure_count[exposure_key]
                     effective_beta = sir_beta * (
                         1.0 + n_exposures * reinforcement_factor
                     )

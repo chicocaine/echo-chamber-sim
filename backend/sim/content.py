@@ -1,14 +1,15 @@
 """Content schema and generation logic for the echo chamber simulation.
 
-MVP Step 3 scope:
-- Content dataclass and required fields
+MVP Step 3 + Phase 5 Step 5.1:
+- Content dataclass with full schema (topic vectors, campaign tracking, satire)
 - Per-agent content generation rules
 - Belief update weight computation (stored on content metadata only in MVP)
+- Effective misinfo scoring with campaign expiry and satire handling
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 import numpy as np
@@ -21,11 +22,19 @@ BOT_MISINFO_MIN = 0.7
 BOT_MISINFO_MAX = 1.0
 VIRALITY_MIN = 0.1
 VIRALITY_MAX = 0.9
+# Phase 5: Topic vector dimensionality (random unit vector until real topic model)
+TOPIC_VECTOR_DIM = 128
+# Campaign expiry delta: ticks after which a campaign is considered "exposed"
+CAMPAIGN_EXPIRY_DELTA = 48
+SATIRE_PROBABILITY = 0.02
 # Phase 2: Emotional valence beta distribution parameters (ref doc Part 6)
 MISINFO_VALENCE_ALPHA = 3.0  # skewed toward high valence
 MISINFO_VALENCE_BETA = 1.0
 NORMAL_VALENCE_ALPHA = 1.0  # skewed toward low valence
 NORMAL_VALENCE_BETA = 3.0
+
+# Global campaign ID counter for coordinated bot misinfo.
+_campaign_counter: int = 0
 
 
 class AgentForContent(Protocol):
@@ -52,7 +61,10 @@ def _clamp_probability(value: float) -> float:
 
 @dataclass(slots=True)
 class Content:
-    """Single content item in the simulation."""
+    """Single content item in the simulation.
+
+    Phase 5 Step 5.1: full schema with topic vectors, campaign tracking, satire.
+    """
 
     id: int
     creator_id: int
@@ -64,9 +76,9 @@ class Content:
     source_credibility: float
     is_misinformation: bool
     belief_update_weight: float
-    topic_vector: list[float]
-    coordinated_campaign_id: int | None
-    is_satire: bool
+    topic_vector: np.ndarray = field(default_factory=lambda: np.empty(0))
+    coordinated_campaign_id: int | None = None
+    is_satire: bool = False
 
     def __post_init__(self) -> None:
         self.ideological_score = _clamp_opinion(self.ideological_score)
@@ -79,6 +91,50 @@ class Content:
         assert self.id >= 0, f"content id must be >= 0, got {self.id}"
         assert self.creator_id >= 0, f"creator_id must be >= 0, got {self.creator_id}"
         assert self.timestamp >= 0, f"timestamp must be >= 0, got {self.timestamp}"
+
+
+def _generate_topic_vector(rng: np.random.Generator) -> np.ndarray:
+    """Generate a random unit-norm topic vector of shape (TOPIC_VECTOR_DIM,).
+
+    This is a placeholder for a real topic model embedding.
+    """
+    vec = rng.normal(0.0, 1.0, size=TOPIC_VECTOR_DIM)
+    norm = np.linalg.norm(vec)
+    return (vec / norm).astype(np.float64)
+
+
+def _next_campaign_id() -> int:
+    """Allocate a new coordinated campaign ID for bot misinformation."""
+    global _campaign_counter
+    cid = _campaign_counter
+    _campaign_counter += 1
+    return cid
+
+
+def get_effective_misinfo_score(
+    content: Content,
+    tick: int,
+    campaign_expiry: dict[int, int],
+    agent_media_literacy: float = 0.5,
+) -> float:
+    """Compute effective misinfo score accounting for campaign expiry and satire.
+
+    Phase 5 Step 5.1:
+    - Campaign-expired content gets elevated misinfo signal (+0.3).
+    - Satire consumed by low-media-literacy agents is treated as factual (0.5 floor).
+    """
+    score = float(content.misinfo_score)
+
+    # Campaign expiry: debunked campaigns make content appear MORE suspicious.
+    cid = content.coordinated_campaign_id
+    if cid is not None and tick > campaign_expiry.get(cid, tick + 999999):
+        score = min(score + 0.3, 1.0)
+
+    # Satire handling: low media literacy = can't tell it's satire.
+    if content.is_satire and agent_media_literacy < 0.4:
+        score = max(score, 0.5)
+
+    return _clamp_probability(score)
 
 
 def compute_belief_update_weight(
@@ -132,7 +188,10 @@ def generate_content_item(
     timestamp: int,
     rng: np.random.Generator,
 ) -> Content:
-    """Create a content item for a specific agent at the current tick."""
+    """Create a content item for a specific agent at the current tick.
+
+    Phase 5 Step 5.1: populates topic vector, campaign ID for bots, and satire flag.
+    """
     ideological_score = _clamp_opinion(
         float(rng.normal(loc=agent.opinion, scale=IDEOLOGICAL_NOISE_STD))
     )
@@ -146,6 +205,15 @@ def generate_content_item(
         source_credibility=source_credibility,
         media_literacy_i=agent.media_literacy,
     )
+    topic_vector = _generate_topic_vector(rng)
+
+    # Bot misinformation is part of a coordinated campaign.
+    coordinated_campaign_id: int | None = None
+    if agent.agent_type == "bot" and is_misinformation:
+        coordinated_campaign_id = _next_campaign_id()
+
+    # Small probability a content item is satire.
+    is_satire = bool(rng.random() < SATIRE_PROBABILITY)
 
     return Content(
         id=content_id,
@@ -158,9 +226,9 @@ def generate_content_item(
         source_credibility=source_credibility,
         is_misinformation=is_misinformation,
         belief_update_weight=belief_update_weight,
-        topic_vector=[],
-        coordinated_campaign_id=None,
-        is_satire=False,
+        topic_vector=topic_vector,
+        coordinated_campaign_id=coordinated_campaign_id,
+        is_satire=is_satire,
     )
 
 
@@ -182,9 +250,11 @@ def maybe_generate_content(
 
 
 __all__ = [
+    "CAMPAIGN_EXPIRY_DELTA",
     "Content",
     "compute_belief_update_weight",
     "generate_content_item",
+    "get_effective_misinfo_score",
     "maybe_generate_content",
     "sample_emotional_valence",
     "sample_misinfo_score",
