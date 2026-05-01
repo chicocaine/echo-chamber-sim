@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { CompareView } from './components/CompareView'
 import { ControlPanel } from './components/ControlPanel'
 import { MetricsPanel } from './components/MetricsPanel'
 import { NetworkGraph } from './components/NetworkGraph'
@@ -30,7 +31,10 @@ const FALLBACK_CONFIG: SimConfig = {
   seed: 42,
 }
 
+type Tab = 'simulate' | 'compare'
+
 function App() {
+  const [tab, setTab] = useState<Tab>('simulate')
   const [config, setConfig] = useState<SimConfig>(FALLBACK_CONFIG)
   const [defaultsLoaded, setDefaultsLoaded] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -93,26 +97,46 @@ function App() {
 
       {loadError && <p className="error-banner">Defaults unavailable: {loadError}</p>}
 
-      <section className="layout-grid">
-        <div className="left-column">
-          <ControlPanel
-            config={config}
-            status={status}
-            onConfigChange={setConfig}
-            onRun={() => {
-              if (canRun) {
-                void run(config)
-              }
-            }}
-          />
-          <NetworkGraph nodes={finalGraph.nodes} edges={finalGraph.edges} />
-        </div>
+      <nav className="tab-nav">
+        <button
+          type="button"
+          className={tab === 'simulate' ? 'tab-active' : ''}
+          onClick={() => setTab('simulate')}
+        >
+          Simulate
+        </button>
+        <button
+          type="button"
+          className={tab === 'compare' ? 'tab-active' : ''}
+          onClick={() => setTab('compare')}
+        >
+          Compare
+        </button>
+      </nav>
 
-        <div className="right-column">
-          <MetricsPanel snapshots={snapshots} />
-          <OpinionHistogram finalAgents={finalAgents} snapshots={snapshots} />
-        </div>
-      </section>
+      {tab === 'simulate' ? (
+        <section className="layout-grid">
+          <div className="left-column">
+            <ControlPanel
+              config={config}
+              status={status}
+              onConfigChange={setConfig}
+              onRun={() => {
+                if (canRun) {
+                  void run(config)
+                }
+              }}
+            />
+            <NetworkGraph nodes={finalGraph.nodes} edges={finalGraph.edges} />
+          </div>
+          <div className="right-column">
+            <MetricsPanel snapshots={snapshots} />
+            <OpinionHistogram finalAgents={finalAgents} snapshots={snapshots} />
+          </div>
+        </section>
+      ) : (
+        <CompareView />
+      )}
     </main>
   )
 }

@@ -13,6 +13,7 @@ import itertools
 from typing import Any, Dict, List
 import orjson
 
+from .metrics import compute_ies
 from .simulation import run_replicated
 
 
@@ -111,3 +112,129 @@ def run_experiment(
         results.append(scenario_output)
 
     return results
+
+
+def format_policy_finding(
+    intervention_result: dict[str, Any],
+    baseline_result: dict[str, Any] | None = None,
+    intervention_name: str = "Intervention",
+) -> str:
+    """Produce a standardized policy-finding text block (Phase 6 Step 6.3).
+
+    Extracts key metrics from aggregated replicated results and generates
+    a human-readable interpretation with tradeoff detection.
+    """
+    agg = intervention_result.get("aggregated", {})
+    if not agg:
+        return f"Intervention: {intervention_name}\n\nNo aggregated data available."
+
+    def _final(metric: str) -> float:
+        series = agg.get(f"{metric}_mean", [])
+        return float(series[-1]) if series else 0.0
+
+    def _final_std(metric: str) -> float:
+        series = agg.get(f"{metric}_std", [])
+        return float(series[-1]) if series else 0.0
+
+    def _peak(metric: str) -> float:
+        series = agg.get(f"{metric}_mean", [])
+        return float(max(series)) if series else 0.0
+
+    # Compute IES vs baseline if provided.
+    ies_scores: dict[str, float] = {}
+    if baseline_result is not None:
+        base_agg = baseline_result.get("aggregated", {})
+        for metric in [
+            "assortativity",
+            "misinfo_prevalence",
+            "polarization_index",
+            "opinion_entropy",
+            "ei_index",
+            "modularity_q",
+        ]:
+            base_mean = base_agg.get(f"{metric}_mean", [])
+            int_mean = agg.get(f"{metric}_mean", [])
+            if base_mean and int_mean:
+                ies_scores[metric] = compute_ies(
+                    float(base_mean[-1]), float(int_mean[-1])
+                )
+
+    peak_misinfo = _peak("misinfo_prevalence")
+    assort = _final("assortativity")
+    assort_std = _final_std("assortativity")
+    entropy = _final("opinion_entropy")
+    entropy_std = _final_std("opinion_entropy")
+    ies_misinfo = ies_scores.get("misinfo_prevalence", 0.0)
+
+    # Build output.
+    lines: list[str] = []
+    lines.append(f"Intervention: {intervention_name}")
+    lines.append("")
+
+    # Findings block.
+    lines.append("Findings:")
+    if ies_misinfo != 0.0:
+        direction = "reduced" if ies_misinfo > 0 else "increased"
+        pct = abs(ies_misinfo) * 100
+        lines.append(
+            f"- Peak misinformation {direction} by {pct:.1f}% (IES = {ies_misinfo:.2f})"
+        )
+    else:
+        lines.append(f"- Peak misinformation: {peak_misinfo:.3f}")
+    lines.append(f"- Final assortativity: {assort:.3f} ± {assort_std:.3f}")
+    lines.append(f"- Opinion entropy: {entropy:.3f} ± {entropy_std:.3f}")
+    lines.append("")
+
+    # Auto-generated interpretation.
+    lines.append("Interpretation:")
+    if ies_misinfo > 0.1:
+        lines.append(
+            f"The intervention effectively reduced misinformation spread "
+            f"({ies_misinfo * 100:.0f}% reduction vs baseline)."
+        )
+    elif ies_misinfo < -0.1:
+        lines.append(
+            f"The intervention unexpectedly increased misinformation spread "
+            f"({-ies_misinfo * 100:.0f}% increase vs baseline)."
+        )
+    else:
+        ies_assort = ies_scores.get("assortativity", 0.0)
+        if ies_assort > 0.1:
+            lines.append(
+                "The intervention reduced echo chamber formation "
+                "(lower assortativity vs baseline) but had limited effect on misinformation."
+            )
+        elif ies_assort < -0.1:
+            lines.append(
+                "The intervention increased echo chamber formation "
+                "(higher assortativity vs baseline). Consider adjusting parameters."
+            )
+        else:
+            lines.append(
+                "The intervention showed mixed or negligible effects across all metrics."
+            )
+    lines.append("")
+
+    # Tradeoff detection.
+    tradeoffs = [
+        metric
+        for metric, ies in ies_scores.items()
+        if ies < -0.05 and metric != "misinfo_prevalence"
+    ]
+    lines.append("Tradeoffs detected:")
+    if tradeoffs:
+        for metric in tradeoffs:
+            lines.append(
+                f"- {metric}: moved in the wrong direction "
+                f"(IES = {ies_scores[metric]:.3f})"
+            )
+    else:
+        lines.append("- No significant tradeoffs detected.")
+
+    return "\n".join(lines)
+
+
+__all__ = [
+    "format_policy_finding",
+    "run_experiment",
+]

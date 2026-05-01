@@ -16,6 +16,9 @@ export interface SimConfig {
   valence_share_weight: number
   arousal_tolerance_effect: number
   seed: number
+  diversity_ratio?: number
+  lambda_penalty?: number
+  dynamic_rewire_rate?: number
 }
 
 export interface MetricSnapshot {
@@ -45,7 +48,7 @@ export interface AgentState {
   influence_weight_multiplier: number
   suspicion_score: number
   is_active: boolean
-  sir_state: 'S' | 'I' | 'R'
+  sir_states: Record<number, 'S' | 'I' | 'R'>
   opinion_history: number[]
   misinfo_rate: number
   exposure_count: Record<number, number>
@@ -75,4 +78,28 @@ export interface SimResult {
   snapshots: MetricSnapshot[]
   final_agents: AgentState[]
   final_graph: GraphSnapshot
+}
+
+export interface CompareRequest {
+  baseline: SimConfig
+  intervention: SimConfig
+  n_runs: number
+}
+
+export interface AggregatedMetrics {
+  tick: number[]
+  [key: string]: number[]
+}
+
+export interface ReplicatedResult {
+  config: SimConfig
+  n_runs: number
+  aggregated: AggregatedMetrics
+  all_runs: MetricSnapshot[][]
+}
+
+export interface CompareResult {
+  baseline: ReplicatedResult
+  intervention: ReplicatedResult
+  ies: Record<string, number>
 }
