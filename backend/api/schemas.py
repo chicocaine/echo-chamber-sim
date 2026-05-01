@@ -146,3 +146,24 @@ class SimResult(BaseModel):
     snapshots: list[MetricSnapshot]
     final_agents: list[dict]
     final_graph: dict
+
+
+class CompareRequest(BaseModel):
+    """Request body for the scenario comparison endpoint (Phase 6 Step 6.2)."""
+
+    baseline: SimConfig
+    intervention: SimConfig
+    n_runs: int = 10
+
+
+IES_METRIC_NAMES = [
+    "opinion_variance",
+    "polarization_index",
+    "assortativity",
+    "opinion_entropy",
+    "misinfo_prevalence",
+    "ei_index",
+    "modularity_q",
+    "cascade_mean",
+    "exposure_disparity",
+]
