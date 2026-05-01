@@ -39,7 +39,10 @@ function App() {
   const [defaultsLoaded, setDefaultsLoaded] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  const { status, result, errorMessage, run } = useSimulation()
+  const {
+    status, result, streaming, errorMessage, run, runStreaming,
+    sendCommand, streamingMode,
+  } = useSimulation()
 
   useEffect(() => {
     let cancelled = false
@@ -65,23 +68,27 @@ function App() {
     }
   }, [])
 
-  const snapshots = result?.snapshots ?? []
+  const snapshots = streamingMode ? streaming.snapshots : (result?.snapshots ?? [])
   const finalAgents = result?.final_agents ?? []
-  const finalGraph = result?.final_graph ?? { nodes: [], edges: [] }
+  const finalGraph = streamingMode
+    ? { nodes: result?.final_graph?.nodes ?? [], edges: streaming.edges.length > 0 ? streaming.edges : (result?.final_graph?.edges ?? []) }
+    : (result?.final_graph ?? { nodes: [], edges: [] })
   const canRun = defaultsLoaded && status !== 'running'
 
   const statusLabel = useMemo(() => {
-    if (status === 'running') {
-      return 'Simulation running...'
+    const effectiveStatus = streamingMode ? streaming.status : status
+    const effectiveError = streamingMode ? streaming.errorMessage : errorMessage
+    if (effectiveStatus === 'running') {
+      return `${streamingMode ? 'Streaming' : 'Simulation'} running...`
     }
-    if (status === 'done') {
-      return 'Simulation complete'
+    if (effectiveStatus === 'done') {
+      return `${streamingMode ? 'Streaming' : 'Simulation'} complete`
     }
-    if (status === 'error') {
-      return `Simulation failed: ${errorMessage ?? 'unknown error'}`
+    if (effectiveStatus === 'error') {
+      return `Failed: ${effectiveError ?? 'unknown error'}`
     }
     return 'Ready'
-  }, [errorMessage, status])
+  }, [errorMessage, status, streamingMode, streaming.status, streaming.errorMessage])
 
   return (
     <main className="app-shell">
@@ -119,15 +126,22 @@ function App() {
           <div className="left-column">
             <ControlPanel
               config={config}
-              status={status}
+              status={streamingMode ? streaming.status : status}
+              streamingMode={streamingMode}
               onConfigChange={setConfig}
-              onRun={() => {
-                if (canRun) {
-                  void run(config)
-                }
-              }}
+              onRun={() => { if (canRun) { void run(config) } }}
+              onStream={() => { if (canRun) { runStreaming(config) } }}
+              onPause={() => sendCommand({ command: 'pause' })}
+              onResume={() => sendCommand({ command: 'resume' })}
+              onStep={() => sendCommand({ command: 'step' })}
+              onSetSpeed={(tps) => sendCommand({ command: 'set_speed', ticks_per_second: tps })}
             />
-            <NetworkGraph nodes={finalGraph.nodes} edges={finalGraph.edges} />
+            <NetworkGraph
+              nodes={finalGraph.nodes}
+              edges={finalGraph.edges}
+              liveOpinions={streamingMode ? streaming.agentOpinions : undefined}
+              liveEdges={streamingMode && streaming.edges.length > 0 ? streaming.edges : undefined}
+            />
           </div>
           <div className="right-column">
             <MetricsPanel snapshots={snapshots} />

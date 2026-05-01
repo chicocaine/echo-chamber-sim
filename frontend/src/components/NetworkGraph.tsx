@@ -6,6 +6,8 @@ import type { GraphEdge, GraphNode } from '../lib/types'
 interface NetworkGraphProps {
   nodes: GraphNode[]
   edges: GraphEdge[]
+  liveOpinions?: number[]
+  liveEdges?: GraphEdge[]
 }
 
 interface ForceNode extends GraphNode {
@@ -44,14 +46,22 @@ function fixedLayout(nodes: GraphNode[]): ForceNode[] {
   })
 }
 
-export function NetworkGraph({ nodes, edges }: NetworkGraphProps) {
+export function NetworkGraph({ nodes, edges, liveOpinions, liveEdges }: NetworkGraphProps) {
+  const isLive = liveOpinions !== undefined && liveOpinions.length > 0
+  const displayEdges = isLive && liveEdges && liveEdges.length > 0 ? liveEdges : edges
+
   const graphData = useMemo(
     () => ({
       nodes: fixedLayout(nodes),
-      links: edges.map((edge) => ({ ...edge })),
+      links: displayEdges.map((edge) => ({ ...edge })),
     }),
-    [nodes, edges],
+    [nodes, displayEdges],
   )
+
+  // Use live opinions for node coloring when streaming.
+  const nodeColorFn = isLive
+    ? (node: { id?: number }) => opinionColor(liveOpinions[node.id ?? 0] ?? 0)
+    : (node: { opinion?: number }) => opinionColor(node.opinion ?? 0)
 
   if (nodes.length > 300) {
     return (
@@ -78,7 +88,7 @@ export function NetworkGraph({ nodes, edges }: NetworkGraphProps) {
           height={360}
           cooldownTicks={0}
           nodeVal={(node) => node.activity_rate * 5 + 3}
-          nodeColor={(node) => opinionColor(node.opinion)}
+          nodeColor={nodeColorFn}
           linkColor={() => 'rgba(15, 23, 42, 0.2)'}
           backgroundColor="rgba(255, 255, 255, 0)"
         />

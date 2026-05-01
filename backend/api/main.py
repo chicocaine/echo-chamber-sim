@@ -7,10 +7,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 import orjson
 
+import asyncio
+import json
+
+from fastapi import WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+
 from api.schemas import CompareRequest, IES_METRIC_NAMES, SimConfig
 from sim.metrics import compute_ies
-from sim.simulation import run_replicated, run_simulation
-from pydantic import BaseModel
+from sim.simulation import run_replicated, run_simulation, run_simulation_streaming
 
 
 app = FastAPI(title="Echo Chamber Simulation API")
@@ -106,6 +111,104 @@ async def run_compare_endpoint(req: CompareRequest) -> Response:
         ),
         media_type="application/json",
     )
+
+
+def _sim_worker(
+    config: dict[str, object],
+    queue: asyncio.Queue[dict[str, object] | None],
+    control_event: asyncio.Event,
+    loop: asyncio.AbstractEventLoop,
+) -> None:
+    """Run the simulation generator in a background thread, feeding results to the queue."""
+    def put(item: dict[str, object] | None) -> None:
+        loop.call_soon_threadsafe(queue.put_nowait, item)
+
+    gen = run_simulation_streaming(config)
+    try:
+        for tick_data in gen:
+            put(tick_data)
+            control_event.wait()  # Block here if paused.
+            control_event.clear()
+        put({"type": "complete"})
+    except Exception as exc:
+        put({"type": "error", "message": str(exc)})
+
+
+@app.websocket("/run/stream")
+async def stream_simulation(websocket: WebSocket) -> None:
+    """Stream simulation tick-by-tick over WebSocket (Phase 7 Step 7.1).
+
+    Receives a SimConfig as JSON on connect, then streams one message per tick.
+    Supports pause/resume/step/set_speed commands from the frontend.
+    """
+    await websocket.accept()
+    config_raw = await websocket.receive_text()
+    config = json.loads(config_raw)
+
+    queue: asyncio.Queue[dict[str, object] | None] = asyncio.Queue(maxsize=10)
+    control_event = asyncio.Event()
+    control_event.set()  # Start in running state.
+    ticks_per_second = 0
+    step_mode = False
+
+    loop = asyncio.get_running_loop()
+    loop.run_in_executor(None, _sim_worker, config, queue, control_event, loop)
+
+    # Coroutine that listens for control messages without blocking.
+    async def recv_commands() -> None:
+        nonlocal ticks_per_second, step_mode
+        while True:
+            try:
+                raw = await asyncio.wait_for(websocket.receive_text(), timeout=0.1)
+                cmd = json.loads(raw)
+                action = cmd.get("command", "")
+                if action == "pause":
+                    control_event.clear()
+                elif action == "resume":
+                    control_event.set()
+                elif action == "step":
+                    step_mode = True
+                    control_event.set()
+                elif action == "set_speed":
+                    ticks_per_second = cmd.get("ticks_per_second", 0)
+            except asyncio.TimeoutError:
+                continue
+            except WebSocketDisconnect:
+                break
+            except Exception:
+                break
+
+    recv_task = asyncio.create_task(recv_commands())
+
+    try:
+        while True:
+            tick_data = await queue.get()
+            msg_type = tick_data.get("type", "")
+
+            if msg_type == "complete":
+                break
+            if msg_type == "error":
+                await websocket.send_json(tick_data)
+                break
+
+            await websocket.send_json(tick_data)
+
+            if step_mode:
+                control_event.clear()
+                step_mode = False
+
+            if ticks_per_second > 0:
+                await asyncio.sleep(1.0 / ticks_per_second)
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+    finally:
+        recv_task.cancel()
+        try:
+            await websocket.close()
+        except Exception:
+            pass
 
 
 @app.get("/defaults")

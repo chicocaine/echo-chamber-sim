@@ -275,3 +275,38 @@
   margin: 0 0 6px 0;
   font-size: 0.9rem;
 }
+
+/* Playback controls */
+.run-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.playback-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.ctrl-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 4px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.ctrl-btn:hover {
+  background: var(--hover, #f3f4f6);
+}
+
+.playback-controls select {
+  margin-left: 4px;
+  padding: 2px 4px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 4px;
+}

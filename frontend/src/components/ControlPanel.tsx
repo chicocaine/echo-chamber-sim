@@ -5,8 +5,14 @@ import type { SimConfig } from '../lib/types'
 interface ControlPanelProps {
   config: SimConfig
   status: 'idle' | 'running' | 'done' | 'error'
+  streamingMode: boolean
   onConfigChange: (nextConfig: SimConfig) => void
   onRun: () => void
+  onStream: () => void
+  onPause: () => void
+  onResume: () => void
+  onStep: () => void
+  onSetSpeed: (tps: number) => void
 }
 
 function roundToTwo(value: number): number {
@@ -21,7 +27,10 @@ function handleRange(
   onConfigChange(updater(Number(event.target.value)))
 }
 
-export function ControlPanel({ config, status, onConfigChange, onRun }: ControlPanelProps) {
+export function ControlPanel({
+  config, status, streamingMode, onConfigChange, onRun, onStream,
+  onPause, onResume, onStep, onSetSpeed,
+}: ControlPanelProps) {
   const updateBotAndZealot = (botFraction: number, zealotFraction: number): SimConfig => {
     const flexible = 0.2
     const stubborn = 1 - (flexible + botFraction + zealotFraction)
@@ -129,9 +138,32 @@ export function ControlPanel({ config, status, onConfigChange, onRun }: ControlP
         </label>
       </div>
 
-      <button type="button" onClick={onRun} disabled={status === 'running'} className="run-button">
-        {status === 'running' ? 'Running...' : 'Run Simulation'}
-      </button>
+      <div className="run-actions">
+        <button type="button" onClick={onRun} disabled={status === 'running'} className="run-button">
+          {status === 'running' ? 'Running...' : 'Run Simulation'}
+        </button>
+        <button type="button" onClick={onStream} disabled={status === 'running'} className="run-button">
+          {status === 'running' ? 'Running...' : 'Stream Live'}
+        </button>
+      </div>
+
+      {streamingMode && (
+        <div className="playback-controls">
+          <button type="button" onClick={onPause} className="ctrl-btn">⏸ Pause</button>
+          <button type="button" onClick={onResume} className="ctrl-btn">▶ Resume</button>
+          <button type="button" onClick={onStep} className="ctrl-btn">⏭ Step</button>
+          <label>
+            Speed:
+            <select onChange={(e) => onSetSpeed(Number(e.target.value))} defaultValue={0}>
+              <option value={0}>Max</option>
+              <option value={2}>2/s</option>
+              <option value={5}>5/s</option>
+              <option value={10}>10/s</option>
+              <option value={20}>20/s</option>
+            </select>
+          </label>
+        </div>
+      )}
 
       <dl className="config-readout">
         <div>
