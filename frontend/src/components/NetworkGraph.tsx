@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import ForceGraph2D from 'react-force-graph-2d'
+import { useMemo, useRef } from 'react'
+import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d'
 
 import type { GraphEdge, GraphNode } from '../lib/types'
 
@@ -47,23 +47,40 @@ function fixedLayout(nodes: GraphNode[]): ForceNode[] {
 }
 
 export function NetworkGraph({ nodes, edges, liveOpinions, liveEdges }: NetworkGraphProps) {
+  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink> | undefined>(undefined)
   const isLive = liveOpinions !== undefined && liveOpinions.length > 0
   const displayEdges = isLive && liveEdges && liveEdges.length > 0 ? liveEdges : edges
 
-  const graphData = useMemo(
-    () => ({
-      nodes: fixedLayout(nodes),
-      links: displayEdges.map((edge) => ({ ...edge })),
-    }),
-    [nodes, displayEdges],
-  )
+  const graphData = useMemo(() => {
+    const baseNodes = nodes.length
+      ? nodes
+      : (liveOpinions ?? []).map((opinion, id) => ({
+        id,
+        opinion,
+        activity_rate: 0.5,
+        agent_type: 'unknown',
+        is_active: true,
+      }))
+
+    const nodeIds = new Set(baseNodes.map((node) => node.id))
+    const links = displayEdges
+      .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+      .map((edge) => ({ ...edge }))
+
+    return {
+      nodes: fixedLayout(baseNodes),
+      links,
+    }
+  }, [nodes, displayEdges, liveOpinions])
 
   // Use live opinions for node coloring when streaming.
   const nodeColorFn = isLive
     ? (node: { id?: number }) => opinionColor(liveOpinions[node.id ?? 0] ?? 0)
     : (node: { opinion?: number }) => opinionColor(node.opinion ?? 0)
 
-  if (nodes.length > 300) {
+  const nodeCount = graphData.nodes.length
+
+  if (nodeCount > 300) {
     return (
       <section className="panel">
         <header className="panel-header">
@@ -84,6 +101,7 @@ export function NetworkGraph({ nodes, edges, liveOpinions, liveEdges }: NetworkG
       <div className="graph-wrap">
         <ForceGraph2D<ForceNode, ForceLink>
           graphData={graphData}
+          ref={graphRef}
           width={560}
           height={360}
           cooldownTicks={0}
