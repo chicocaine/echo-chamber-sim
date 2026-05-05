@@ -1,40 +1,12 @@
-:root {
-  --bg: #f5f7f3;
-  --ink: #111827;
-  --muted: #475569;
-  --panel-bg: #ffffff;
-  --panel-border: #dce3dd;
-  --panel-shadow: rgba(15, 23, 42, 0.06) 0 4px 12px;
-  --grid: #d1d5db;
-
-  font-family: 'Trebuchet MS', 'Avenir Next', 'Segoe UI', sans-serif;
-  color: var(--ink);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 20% 10%, rgba(15, 118, 110, 0.11), transparent 38%),
-    radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.13), transparent 35%),
-    var(--bg);
+  background: #0f0f14;
 }
 
-#root {
-  width: min(1280px, 100%);
-  margin: 0 auto;
-}
-
-h1,
-h2,
-p {
+h1, h2, p {
   margin: 0;
 }

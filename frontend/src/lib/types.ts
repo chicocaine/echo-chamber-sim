@@ -2,6 +2,9 @@ export interface SimConfig {
   N: number
   avg_degree: number
   rewire_prob: number
+  topology: 'watts_strogatz' | 'barabasi_albert' | 'erdos_renyi' | 'stochastic_block'
+  community_sizes?: number[] | null
+  community_p?: number[][] | null
   T: number
   snapshot_interval: number
   alpha: number
@@ -10,15 +13,28 @@ export interface SimConfig {
   agent_mix: Record<string, number>
   sir_beta: number
   sir_gamma: number
+  reinforcement_factor: number
+  recommender_type: 'content_based' | 'cf' | 'graph' | 'hybrid'
+  cf_blend_ratio: number
+  dynamic_rewire_rate: number
+  homophily_threshold: number
+  enable_churn: boolean
+  churn_base: number
+  churn_weight: number
+  T_detect: number
+  s_thresh: number
+  p_detect_remove: number
+  rate_limit_factor: number
+  media_literacy_boost: number
+  diversity_ratio: number
+  lambda_penalty: number
+  virality_dampening: number
   initial_opinion_distribution: 'uniform' | 'bimodal'
   emotional_decay: number
   arousal_share_weight: number
   valence_share_weight: number
   arousal_tolerance_effect: number
   seed: number
-  diversity_ratio?: number
-  lambda_penalty?: number
-  dynamic_rewire_rate?: number
 }
 
 export interface MetricSnapshot {
@@ -28,6 +44,11 @@ export interface MetricSnapshot {
   assortativity: number
   opinion_entropy: number
   misinfo_prevalence: number
+  modularity_q?: number
+  ei_index?: number
+  cascade_mean?: number
+  cascade_max?: number
+  exposure_disparity?: number
 }
 
 export interface AgentState {
@@ -80,26 +101,23 @@ export interface SimResult {
   final_graph: GraphSnapshot
 }
 
-export interface CompareRequest {
-  baseline: SimConfig
-  intervention: SimConfig
-  n_runs: number
+export type SimStatus = 'idle' | 'running' | 'done' | 'error'
+
+export interface ConfigSectionDef {
+  key: string
+  label: string
+  params: ConfigParamDef[]
 }
 
-export interface AggregatedMetrics {
-  tick: number[]
-  [key: string]: number[]
-}
-
-export interface ReplicatedResult {
-  config: SimConfig
-  n_runs: number
-  aggregated: AggregatedMetrics
-  all_runs: MetricSnapshot[][]
-}
-
-export interface CompareResult {
-  baseline: ReplicatedResult
-  intervention: ReplicatedResult
-  ies: Record<string, number>
+export interface ConfigParamDef {
+  key: string
+  label: string
+  tooltip: string
+  type: 'number' | 'select' | 'boolean' | 'slider' | 'agent_mix'
+  min?: number
+  max?: number
+  step?: number
+  options?: { value: string; label: string }[]
+  agentType?: string
+  showIf?: (config: SimConfig) => boolean
 }

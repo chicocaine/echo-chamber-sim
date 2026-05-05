@@ -1,81 +1,100 @@
-import { useMemo, useState } from 'react'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useMemo } from 'react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
-import type { AgentState, MetricSnapshot } from '../lib/types'
-
-interface OpinionHistogramProps {
-  finalAgents: AgentState[]
-  snapshots: MetricSnapshot[]
+interface Props {
+  opinions: number[]
+  currentTick: number
+  maxTick: number
 }
 
-interface HistogramBin {
-  bucket: string
-  count: number
+const BINS = 24
+
+function opinionColor(opinion: number): string {
+  const t = (opinion + 1) / 2
+  const r = Math.round(220 * t + 80 * (1 - t))
+  const g = Math.round(60 * t + 80 * (1 - t))
+  const b = Math.round(60 * t + 220 * (1 - t))
+  return `rgb(${r},${g},${b})`
 }
 
-function buildHistogram(finalAgents: AgentState[]): HistogramBin[] {
-  const binCount = 20
-  const min = -1
-  const max = 1
-  const width = (max - min) / binCount
+export function OpinionHistogram({ opinions }: Props) {
+  const histogram = useMemo(() => {
+    if (opinions.length === 0) return []
 
-  const counts = new Array<number>(binCount).fill(0)
-  for (const agent of finalAgents) {
-    const rawIndex = Math.floor((agent.opinion - min) / width)
-    const index = Math.max(0, Math.min(binCount - 1, rawIndex))
-    counts[index] += 1
-  }
-
-  return counts.map((count, index) => {
-    const start = min + index * width
-    const end = start + width
-    return {
-      bucket: `${start.toFixed(1)}..${end.toFixed(1)}`,
-      count,
+    const bins: number[] = new Array(BINS).fill(0)
+    for (const o of opinions) {
+      const idx = Math.min(Math.floor(((o + 1) / 2) * BINS), BINS - 1)
+      bins[idx]++
     }
-  })
-}
 
-export function OpinionHistogram({ finalAgents, snapshots }: OpinionHistogramProps) {
-  const [selectedSnapshotIndex, setSelectedSnapshotIndex] = useState(0)
-
-  const histogram = useMemo(() => buildHistogram(finalAgents), [finalAgents])
-  const maxIndex = Math.max(0, snapshots.length - 1)
-  const selectedTick = snapshots[selectedSnapshotIndex]?.tick ?? 0
+    const max = Math.max(1, ...bins)
+    const binWidth = 2 / BINS
+    return bins.map((count, i) => ({
+      binStart: -1 + i * binWidth,
+      binCenter: -1 + (i + 0.5) * binWidth,
+      count,
+      fraction: count / opinions.length,
+      maxFraction: count / max,
+    }))
+  }, [opinions])
 
   return (
-    <section className="panel">
-      <header className="panel-header">
-        <h2>Opinion Histogram</h2>
-        <p>
-          Tick {selectedTick} (MVP displays final-state distribution for all scrubber positions).
-        </p>
-      </header>
-
-      <label className="scrubber">
-        <span>Snapshot index: {selectedSnapshotIndex}</span>
-        <input
-          type="range"
-          min={0}
-          max={maxIndex}
-          step={1}
-          value={selectedSnapshotIndex}
-          onChange={(event) => setSelectedSnapshotIndex(Number(event.target.value))}
-          disabled={maxIndex === 0}
-        />
-      </label>
-
-      <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={histogram} margin={{ top: 8, right: 12, left: 4, bottom: 40 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" />
-            <XAxis dataKey="bucket" angle={-30} textAnchor="end" interval={1} height={64} />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="count" fill="#0f766e" radius={[4, 4, 0, 0]} />
+    <div className="chart-box">
+      <div className="chart-heading">Opinion Distribution ({opinions.length} agents)</div>
+      {histogram.length > 0 ? (
+        <div className="chart-area">
+          <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={histogram} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+            <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+            <XAxis
+              dataKey="binCenter"
+              stroke="#555"
+              tick={{ fontSize: 10, fill: '#787888' }}
+              tickLine={false}
+              domain={[-1, 1]}
+              type="number"
+              tickFormatter={(v: number) => v.toFixed(1)}
+            />
+            <YAxis
+              stroke="#555"
+              tick={{ fontSize: 10, fill: '#787888' }}
+              tickLine={false}
+            />
+            <Tooltip
+              contentStyle={{
+                background: '#1a1a24',
+                border: '1px solid #2a2a3a',
+                borderRadius: 4,
+                fontSize: 11,
+                color: '#d0d0d8',
+              }}
+              formatter={(value: number) => [value, 'Agents']}
+              labelFormatter={(v: number) => `Opinion: ${v.toFixed(2)}`}
+            />
+            <Bar dataKey="count" radius={[1, 1, 0, 0]} isAnimationActive={false}>
+              {histogram.map((entry, idx) => (
+                <Cell key={idx} fill={opinionColor(entry.binCenter)} fillOpacity={0.8} />
+              ))}
+            </Bar>
+            <ReferenceLine x={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="4 4" />
           </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </section>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#555' }}>
+          No data
+        </div>
+      )}
+    </div>
   )
 }
