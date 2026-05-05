@@ -123,31 +123,6 @@ class SimConfig(BaseModel):
         return self
 
 
-class MetricSnapshot(BaseModel):
-    """Metric values logged at a simulation tick (Phase 6 Step 6.1)."""
-
-    tick: int
-    opinion_variance: float
-    polarization_index: float
-    assortativity: float
-    opinion_entropy: float
-    misinfo_prevalence: float
-    ei_index: float = 0.0
-    modularity_q: float = 0.0
-    cascade_mean: float | None = None
-    cascade_max: int | None = None
-    exposure_disparity: float | None = None
-
-
-class SimResult(BaseModel):
-    """Simulation execution output payload."""
-
-    config: SimConfig
-    snapshots: list[MetricSnapshot]
-    final_agents: list[dict]
-    final_graph: dict
-
-
 class CompareRequest(BaseModel):
     """Request body for the scenario comparison endpoint (Phase 6 Step 6.2)."""
 
