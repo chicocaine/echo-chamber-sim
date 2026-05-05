@@ -370,7 +370,7 @@ def rewire_step(
     dynamic_rewire_rate: float,
     homophily_threshold: float,
     seed: int | None = None,
-) -> None:
+) -> bool:
     """Dynamic edge rewiring: agents unfollow disagreeing peers and follow similar ones.
 
     Each active agent, with probability ``dynamic_rewire_rate``, evaluates its
@@ -382,12 +382,14 @@ def rewire_step(
     - Rewiring changes OUTGOING edges (who this agent follows = successors).
     - After remove_edge(agent, worst): renormalize_weights(G, worst).
     - After add_edge(agent, new_follow): renormalize_weights(G, new_follow).
+    Returns True if any edge changes were applied.
     """
     if dynamic_rewire_rate <= 0.0:
-        return
+        return False
 
     rng = random.Random(seed)
     agent_map = {a.id: a for a in agents}
+    graph_changed = False
 
     for agent in agents:
         if not agent.is_active:
@@ -412,6 +414,7 @@ def rewire_step(
         # Unfollow.
         G.remove_edge(agent.id, worst_id)
         renormalize_weights(G, worst_id)
+        graph_changed = True
 
         # Find a new agent within homophily_threshold to follow.
         current_following = set(get_successors(G, agent.id))
@@ -429,6 +432,9 @@ def rewire_step(
             # Initialize edge weight for the new connection.
             G[agent.id][new_follow.id]["weight"] = 1.0
             renormalize_weights(G, new_follow.id)
+            graph_changed = True
+
+    return graph_changed
 
 
 def compute_dissatisfaction(agent: Agent, G: nx.DiGraph) -> float:

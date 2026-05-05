@@ -51,12 +51,12 @@ class AgentForContent(Protocol):
 
 def _clamp_opinion(value: float) -> float:
     """Clamp values to opinion range [-1.0, 1.0]."""
-    return float(np.clip(value, -1.0, 1.0))
+    return float(max(-1.0, min(1.0, value)))
 
 
 def _clamp_probability(value: float) -> float:
     """Clamp values to probability range [0.0, 1.0]."""
-    return float(np.clip(value, 0.0, 1.0))
+    return float(max(0.0, min(1.0, value)))
 
 
 @dataclass(slots=True)
@@ -91,16 +91,6 @@ class Content:
         assert self.id >= 0, f"content id must be >= 0, got {self.id}"
         assert self.creator_id >= 0, f"creator_id must be >= 0, got {self.creator_id}"
         assert self.timestamp >= 0, f"timestamp must be >= 0, got {self.timestamp}"
-
-
-def _generate_topic_vector(rng: np.random.Generator) -> np.ndarray:
-    """Generate a random unit-norm topic vector of shape (TOPIC_VECTOR_DIM,).
-
-    This is a placeholder for a real topic model embedding.
-    """
-    vec = rng.normal(0.0, 1.0, size=TOPIC_VECTOR_DIM)
-    norm = np.linalg.norm(vec)
-    return (vec / norm).astype(np.float64)
 
 
 def _next_campaign_id() -> int:
@@ -205,8 +195,6 @@ def generate_content_item(
         source_credibility=source_credibility,
         media_literacy_i=agent.media_literacy,
     )
-    topic_vector = _generate_topic_vector(rng)
-
     # Bot misinformation is part of a coordinated campaign.
     coordinated_campaign_id: int | None = None
     if agent.agent_type == "bot" and is_misinformation:
@@ -226,7 +214,6 @@ def generate_content_item(
         source_credibility=source_credibility,
         is_misinformation=is_misinformation,
         belief_update_weight=belief_update_weight,
-        topic_vector=topic_vector,
         coordinated_campaign_id=coordinated_campaign_id,
         is_satire=is_satire,
     )

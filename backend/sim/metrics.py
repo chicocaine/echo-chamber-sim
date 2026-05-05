@@ -22,6 +22,14 @@ import numpy as np
 from .agent import Agent
 
 
+try:
+    profile  # type: ignore[name-defined]
+except NameError:
+    def profile(func):
+        """No-op decorator when line_profiler is not active."""
+        return func
+
+
 ENTROPY_BIN_COUNT = 20
 OPINION_MIN = -1.0
 OPINION_MAX = 1.0
@@ -174,8 +182,9 @@ def ei_index(G: nx.DiGraph, agents: list[Agent]) -> float:
     return float((external - internal) / total)
 
 
+@profile
 def modularity_q(G: nx.DiGraph) -> float:
-    """Modularity Q using greedy community detection on the undirected graph.
+    """Modularity Q using Louvain community detection on the undirected graph.
 
     Values 0.3-0.7 indicate strong community structure (echo chambers).
     Returns 0.0 for graphs with fewer than 2 nodes.
@@ -184,8 +193,8 @@ def modularity_q(G: nx.DiGraph) -> float:
         return 0.0
 
     try:
-        ug = G.to_undirected()
-        communities = nx.community.greedy_modularity_communities(ug)
+        ug = G.to_undirected(as_view=True)
+        communities = nx.community.louvain_communities(ug, seed=42)
         return float(nx.community.modularity(ug, communities))
     except Exception:
         return 0.0
@@ -274,22 +283,53 @@ def compute_all_metrics(
     tick: int,
     shared_content: dict[int, list[Any]] | None = None,
     consumed_items: dict[int, list[Any]] | None = None,
+    modularity_override: float | None = None,
 ) -> dict[str, Any]:
     """Return the full metric snapshot payload for a simulation tick.
 
     Phase 6 Step 6.1: adds E-I index, modularity Q, cascade stats, and
     exposure disparity when the optional data dicts are provided.
     """
+    opinions = np.array([float(agent.opinion) for agent in agents], dtype=np.float64)
     snapshot: dict[str, Any] = {
         "tick": int(tick),
-        "opinion_variance": opinion_variance(G, agents),
-        "polarization_index": polarization_index(G, agents),
-        "assortativity": opinion_assortativity(G, agents),
+        "opinion_variance": float(np.var(opinions)) if opinions.size else 0.0,
         "opinion_entropy": opinion_entropy(G, agents),
         "misinfo_prevalence": misinformation_prevalence(G, agents),
-        "ei_index": ei_index(G, agents),
-        "modularity_q": modularity_q(G),
+        "modularity_q": float(modularity_override) if modularity_override is not None else modularity_q(G),
     }
+
+    if G.number_of_edges() == 0:
+        snapshot["polarization_index"] = 0.0
+        snapshot["assortativity"] = 0.0
+        snapshot["ei_index"] = 0.0
+    else:
+        edges = np.asarray(list(G.edges), dtype=np.int64)
+        sources = edges[:, 0]
+        targets = edges[:, 1]
+        source_vals = opinions[sources]
+        target_vals = opinions[targets]
+
+        snapshot["polarization_index"] = float(np.mean(np.abs(source_vals - target_vals)))
+
+        x_std = float(np.std(source_vals))
+        y_std = float(np.std(target_vals))
+        if x_std <= 0.0 or y_std <= 0.0:
+            snapshot["assortativity"] = 0.0
+        else:
+            x_centered = source_vals - float(np.mean(source_vals))
+            y_centered = target_vals - float(np.mean(target_vals))
+            numerator = float(np.sum(x_centered * y_centered))
+            denominator = math.sqrt(
+                float(np.sum(x_centered * x_centered) * np.sum(y_centered * y_centered))
+            )
+            snapshot["assortativity"] = float(numerator / denominator) if denominator > 0.0 else 0.0
+
+        quartiles = np.digitize(opinions, [-0.5, 0.0, 0.5], right=False)
+        internal = int(np.sum(quartiles[sources] == quartiles[targets]))
+        external = int(edges.shape[0] - internal)
+        total = internal + external
+        snapshot["ei_index"] = float((external - internal) / total) if total else 0.0
 
     if shared_content is not None:
         cascade = cascade_stats(shared_content)

@@ -189,9 +189,9 @@ class StubbornAgent(Agent):
         if not neighbors:
             return self.opinion
 
-        normalized_weights = _normalize_influence_weights(neighbors, influence_weights)
         weighted_avg = sum(
-            normalized_weights[neighbor.id] * neighbor.opinion for neighbor in neighbors
+            influence_weights.get(neighbor.id, 0.0) * neighbor.opinion
+            for neighbor in neighbors
         )
         updated = self.stubbornness * self.initial_opinion + (1.0 - self.stubbornness) * weighted_avg
         return _clamp_opinion(updated)
@@ -218,9 +218,9 @@ class FlexibleAgent(Agent):
         if not neighbors:
             return self.opinion
 
-        normalized_weights = _normalize_influence_weights(neighbors, influence_weights)
         weighted_avg = sum(
-            normalized_weights[neighbor.id] * neighbor.opinion for neighbor in neighbors
+            influence_weights.get(neighbor.id, 0.0) * neighbor.opinion
+            for neighbor in neighbors
         )
         return _clamp_opinion(weighted_avg)
 
@@ -270,9 +270,9 @@ class ContrarianAgent(Agent):
         if not neighbors:
             return self.opinion
 
-        normalized_weights = _normalize_influence_weights(neighbors, influence_weights)
         neighbor_avg = sum(
-            normalized_weights[neighbor.id] * neighbor.opinion for neighbor in neighbors
+            influence_weights.get(neighbor.id, 0.0) * neighbor.opinion
+            for neighbor in neighbors
         )
         influence_delta = float(neighbor_avg) - float(self.opinion)
 

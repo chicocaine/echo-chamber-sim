@@ -364,16 +364,13 @@ def generate_feed_vectorized(
     if content_misinfo_array is not None and n_candidates != int(content_misinfo_array.shape[0]):
         raise ValueError("content_misinfo_array length must match candidate_pool")
 
-    similarity = 1.0 - np.abs(float(agent.opinion) - content_ideo_array)
-    popularity_component = beta_pop * np.log1p(content_virality_array * 9.0)
-    scores = alpha * similarity + (1.0 - alpha) * popularity_component
+    scores = 1.0 - np.abs(content_ideo_array - float(agent.opinion))
+    scores *= alpha
+    if beta_pop != 0.0:
+        scores += (1.0 - alpha) * beta_pop * np.log1p(content_virality_array * 9.0)
 
     if lambda_penalty > 0.0 and content_misinfo_array is not None:
-        scores = scores - lambda_penalty * content_misinfo_array
-
-    max_score = float(np.max(scores))
-    if max_score > 0.0:
-        scores = scores / max_score
+        scores -= lambda_penalty * content_misinfo_array
 
     # Diversity injection: reserve k_div slots for low-scoring (dissimilar) content.
     k_sim = int(k_exp * (1.0 - diversity_ratio))
@@ -384,9 +381,8 @@ def generate_feed_vectorized(
             top_indices = list(range(n_candidates))
         else:
             top_indices_unsorted = np.argpartition(scores, -k_exp)[-k_exp:]
-            top_indices = list(top_indices_unsorted)
-        top_indices.sort(key=lambda i: scores[i], reverse=True)
-        return [candidate_pool[i] for i in top_indices[:k_exp]]
+            top_indices = top_indices_unsorted[np.argsort(scores[top_indices_unsorted])[::-1]]
+        return [candidate_pool[int(i)] for i in top_indices[:k_exp]]
 
     # Full rank-ordering for correct diversity partition.
     ranked = list(range(n_candidates))

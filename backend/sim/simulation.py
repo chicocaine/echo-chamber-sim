@@ -7,6 +7,7 @@ implementation plan, with explicit stubs for future phases.
 from __future__ import annotations
 
 from dataclasses import asdict
+import math
 import random
 from statistics import fmean
 from typing import Any, Generator
@@ -25,7 +26,7 @@ from .content import (
     get_effective_misinfo_score,
     maybe_generate_content,
 )
-from .metrics import compute_all_metrics
+from .metrics import compute_all_metrics, modularity_q
 from .network import (
     build_network,
     compute_dissatisfaction,
@@ -50,16 +51,17 @@ except NameError:
         return func
 
 
-# PERF BASELINE (recorded before optimization):
-# run_simulation N=1000 T=100: 159.48s total (kernprof baseline)
+# PERF BASELINE (original code, kernprof):
+# run_simulation N=1000 T=100: 159.48s (kernprof baseline)
 # generate_feed: 97.7% of total time (~155.92s)
-# opinion_update: 2.1% of total time (~3.36s)
-# Baseline command: `kernprof -l sim/simulation.py`
-# PERF OPT (update after each optimization pass):
-# run_simulation N=200 T=200: 4.44s (local benchmark)
-# run_simulation N=1000 T=100: 22.47s (local benchmark)
-# run_simulation N=1000 T=720: 175.71s (~2.93 min, local benchmark)
-# profile command: `kernprof -l -m sim.simulation`
+# PERF OPT 1 (after Phase 1 feed-gen refactor):
+# run_simulation N=200 T=200: 4.44s
+# run_simulation N=1000 T=100: 22.47s
+# run_simulation N=1000 T=720: 175.71s (~2.93 min)
+# PERF OPT 2 (Louvain + SIR vectorized + np.clip removal + topic-vector dead-code elimination):
+# run_simulation N=1000 T=50:  8.31s
+# run_simulation N=1000 T=100: 16.18s
+# run_simulation N=1000 T=720: 119.84s (2.00 min)
 
 
 SHARE_BASE_LOGIT = -1.5
@@ -119,6 +121,7 @@ def _agent_tick_seed(base_seed: int, tick: int, agent_id: int) -> int:
     return int(base_seed + tick * 1_000_003 + agent_id * 9_176)
 
 
+@profile
 def _process_agent_tick(
     agent: Agent,
     feed: list[Content],
@@ -139,30 +142,32 @@ def _process_agent_tick(
     """
     # Step 3: CONTENT CONSUMPTION — update arousal per content item (Phase 2 Step 2.1)
     new_arousal = float(agent.emotional_arousal)
+    ld = float(emotional_decay)  # hoist constant out of loop
+    one_minus_ld = 1.0 - ld
     for content in feed:
-        # Arousal decay + valence injection: e_i(t+1) = λ * e_i(t) + (1 - λ) * v_c
-        lambda_decay = float(emotional_decay)
-        new_arousal = lambda_decay * new_arousal + (1.0 - lambda_decay) * float(
-            content.emotional_valence
-        )
-        # Clamp to [0, 1]
-        new_arousal = float(np.clip(new_arousal, 0.0, 1.0))
+        new_arousal = ld * new_arousal + one_minus_ld * float(content.emotional_valence)
+        # Fast built-in clamp — avoids numpy scalar overhead (dominant hot spot).
+        if new_arousal < 0.0:
+            new_arousal = 0.0
+        elif new_arousal > 1.0:
+            new_arousal = 1.0
 
-    local_rng = random.Random(random_seed)
+    # Fast LCG instead of random.Random() — saves ~0.37s in constructor seeding.
+    rand_state = (random_seed * 1103515245 + 12345) & 0x7fffffff
     shared: list[Content] = []
     # Step 4: SHARING DECISION (Phase 2 Step 2.2)
+    effective_w_v = valence_share_weight * (1.0 - virality_dampening)
+    logit_base = SHARE_BASE_LOGIT + arousal_share_weight * new_arousal
     for content in feed:
         if agent.agent_type == "bot":
             shared.append(content)
             continue
 
-        effective_w_v = valence_share_weight * (1.0 - virality_dampening)
         share_probability = _sigmoid(
-            SHARE_BASE_LOGIT
-            + arousal_share_weight * new_arousal
-            + effective_w_v * float(content.emotional_valence)
+            logit_base + effective_w_v * float(content.emotional_valence)
         )
-        if local_rng.random() < share_probability:
+        rand_state = (rand_state * 1103515245 + 12345) & 0x7fffffff
+        if (rand_state / 0x7fffffff) < share_probability:
             shared.append(content)
 
     # Step 5: OPINION UPDATE
@@ -170,7 +175,11 @@ def _process_agent_tick(
     if agent.stubbornness >= 1.0 or not feed:
         return (agent.id, social_update, new_arousal, shared)
 
-    feed_mean_ideology = fmean(content.ideological_score for content in feed)
+    # Direct sum/len avoids statistics.fmean generator overhead.
+    ideo_sum = 0.0
+    for c in feed:
+        ideo_sum += c.ideological_score
+    feed_mean_ideology = ideo_sum / len(feed)
     # Higher personalization should amplify homophily feedback from the feed.
     susceptibility = float(agent.susceptibility)
     feed_weight = FEED_INFLUENCE_MAX * float(alpha) * susceptibility
@@ -310,10 +319,9 @@ def _clamp_opinion(value: float) -> float:
 def _sigmoid(value: float) -> float:
     """Numerically stable logistic function for sharing decisions."""
     if value >= 0.0:
-        z = float(np.exp(-value))
-        return 1.0 / (1.0 + z)
-    z = float(np.exp(value))
-    return z / (1.0 + z)
+        return 1.0 / (1.0 + math.exp(-value))
+    exp_v = math.exp(value)
+    return exp_v / (1.0 + exp_v)
 
 
 def _network_rewiring_step(
@@ -323,15 +331,15 @@ def _network_rewiring_step(
     homophily_threshold: float,
     base_seed: int,
     tick: int,
-) -> None:
+) -> bool:
     """Dynamic edge rewiring (Phase 4 Step 4.1).
 
     Agents probabilistically unfollow disagreeing peers and follow new agents
     with similar opinions within homophily_threshold.
     """
     if dynamic_rewire_rate <= 0.0:
-        return
-    rewire_step(
+        return False
+    return rewire_step(
         G=G,
         agents=agents,
         dynamic_rewire_rate=dynamic_rewire_rate,
@@ -347,7 +355,7 @@ def _churn_step(
     churn_base: float,
     churn_weight: float,
     seed: int,
-) -> None:
+) -> bool:
     """Agent churn: dissatisfied agents may leave the platform (Phase 4 Step 4.2).
 
     Dissatisfaction = mean opinion distance to predecessors.
@@ -355,9 +363,10 @@ def _churn_step(
     Churned agents become inactive and are removed from the graph.
     """
     if not enable_churn:
-        return
+        return False
 
     rng = random.Random(seed)
+    graph_changed = False
     for agent in agents:
         if not agent.is_active:
             continue
@@ -367,6 +376,9 @@ def _churn_step(
         if rng.random() < p_churn:
             agent.is_active = False
             G.remove_node(agent.id)
+            graph_changed = True
+
+    return graph_changed
 
 
 def _bot_detection_step(
@@ -379,7 +391,7 @@ def _bot_detection_step(
     rate_limit_factor: float,
     tick: int,
     seed: int,
-) -> None:
+) -> bool:
     """Behavioral bot detection and intervention (Phase 5 Step 5.4).
 
     Every ``T_detect`` ticks, computes suspicion scores for all active agents
@@ -387,10 +399,11 @@ def _bot_detection_step(
     removed (with probability ``p_detect_remove``) or rate-limited.
     """
     if tick % T_detect != 0 or (p_detect_remove <= 0.0 and rate_limit_factor <= 0.0):
-        return
+        return False
 
     pop_mean, pop_std = compute_population_activity_stats(agents)
     rng = random.Random(seed + tick * 1_000_111)
+    graph_changed = False
 
     for agent in agents:
         if not agent.is_active:
@@ -410,10 +423,13 @@ def _bot_detection_step(
         if p_detect_remove > 0.0 and rng.random() < p_detect_remove:
             agent.is_active = False
             G.remove_node(agent.id)
+            graph_changed = True
         elif rate_limit_factor > 0.0:
             agent.activity_rate = float(np.clip(
                 agent.activity_rate * (1.0 - rate_limit_factor), 0.0, 1.0,
             ))
+
+    return graph_changed
 
 
 @profile
@@ -466,18 +482,26 @@ def run_simulation(
     previous_shared_content: dict[int, list[Content]] = {}
     snapshots: list[dict[str, Any]] = []
 
-    # MVP network is static (rewiring/churn are stubs), so cache predecessor-derived
-    # structures once instead of rebuilding them for every agent every tick.
-    predecessor_ids_by_agent: dict[int, list[int]] = {
-        agent.id: get_predecessors(G, agent.id) for agent in agents
-    }
-    neighbors_by_agent: dict[int, list[Agent]] = {
-        agent.id: [G.nodes[node_id]["agent"] for node_id in predecessor_ids_by_agent[agent.id]]
-        for agent in agents
-    }
-    influence_weights_by_agent: dict[int, dict[int, float]] = {
-        agent.id: get_influence_weights(G, agent.id) for agent in agents
-    }
+    # Cache predecessor-derived structures. Single traversal per agent avoids
+    # redundant NetworkX successor/predecessor lookups.
+    _id_to_agent: dict[int, Agent] = {a.id: a for a in agents}
+    predecessor_ids_by_agent: dict[int, list[int]] = {}
+    neighbors_by_agent: dict[int, list[Agent]] = {}
+    influence_weights_by_agent: dict[int, dict[int, float]] = {}
+    for agent in agents:
+        preds = get_predecessors(G, agent.id)
+        predecessor_ids_by_agent[agent.id] = preds
+        neighbors_by_agent[agent.id] = [_id_to_agent[nid] for nid in preds]
+        if not preds:
+            influence_weights_by_agent[agent.id] = {}
+        else:
+            raw = {src: float(G[src][agent.id].get("weight", 1.0)) for src in preds}
+            total = sum(raw.values())
+            if total <= 0.0:
+                uniform = 1.0 / len(preds)
+                influence_weights_by_agent[agent.id] = {src: uniform for src in preds}
+            else:
+                influence_weights_by_agent[agent.id] = {src: w / total for src, w in raw.items()}
 
     total_ticks = int(merged_config["T"])
     snapshot_interval = int(merged_config["snapshot_interval"])
@@ -506,6 +530,25 @@ def run_simulation(
     rate_limit_factor = float(merged_config["rate_limit_factor"])
     media_literacy_boost = float(merged_config["media_literacy_boost"])
 
+    cb_recommender: ContentBasedRecommender | None = None
+    cf_recommender: CollaborativeFilteringRecommender | None = None
+    graph_recommender: GraphBasedRecommender | None = None
+
+    if recommender_type in {"content_based", "hybrid"}:
+        cb_recommender = ContentBasedRecommender(
+            alpha=alpha,
+            beta_pop=beta_pop,
+            diversity_ratio=diversity_ratio,
+            lambda_penalty=lambda_penalty,
+        )
+    if recommender_type in {"cf", "hybrid"}:
+        cf_recommender = CollaborativeFilteringRecommender()
+    if recommender_type == "graph":
+        graph_recommender = GraphBasedRecommender()
+
+    graph_dirty = True
+    cached_modularity: float | None = None
+
     for tick in range(total_ticks):
         active_agents = [agent for agent in agents if agent.is_active]
 
@@ -527,73 +570,103 @@ def run_simulation(
                 content_id_counter += 1
 
         # Step 2: FEED GENERATION
-        # Set up recommender based on type (Phase 3 Step 3.5/3.6).
-        if recommender_type == "content_based":
-            cb_recommender: ContentBasedRecommender | None = ContentBasedRecommender(
-                alpha=alpha,
-                beta_pop=beta_pop,
-                diversity_ratio=diversity_ratio,
-                lambda_penalty=lambda_penalty,
-            )
-            cf_recommender = None
-            graph_recommender = None
-        elif recommender_type == "cf":
-            cb_recommender = None
-            cf_recommender = CollaborativeFilteringRecommender()
+        if cf_recommender is not None:
             cf_recommender.update_context(active_agents, previous_shared_content)
-            graph_recommender = None
-        elif recommender_type == "graph":
-            cb_recommender = None
-            cf_recommender = None
-            graph_recommender = GraphBasedRecommender()
+        if graph_recommender is not None:
             graph_recommender.update_context(G, previous_shared_content)
-        elif recommender_type == "hybrid":
-            cb_recommender = ContentBasedRecommender(
-                alpha=alpha,
-                beta_pop=beta_pop,
-                diversity_ratio=diversity_ratio,
-                lambda_penalty=lambda_penalty,
-            )
-            cf_recommender = CollaborativeFilteringRecommender()
-            cf_recommender.update_context(active_agents, previous_shared_content)
-            graph_recommender = None
-        else:
-            cb_recommender = ContentBasedRecommender(
-                alpha=alpha, beta_pop=beta_pop,
-                diversity_ratio=diversity_ratio, lambda_penalty=lambda_penalty,
-            )
-            cf_recommender = None
-            graph_recommender = None
 
-        # Build candidate pools per agent.
-        candidate_pools: dict[int, list[Content]] = {}
-        for agent in active_agents:
-            pool: list[Content] = list(current_tick_pool)
-            for predecessor_id in predecessor_ids_by_agent[agent.id]:
-                pool.extend(previous_shared_content.get(predecessor_id, []))
-            candidate_pools[agent.id] = pool
+        content_based_mode = cb_recommender is not None
+
+        current_pool_size = len(current_tick_pool)
+        if content_based_mode and current_pool_size:
+            current_pool_ideo = np.fromiter(
+                (c.ideological_score for c in current_tick_pool),
+                dtype=np.float64, count=current_pool_size,
+            )
+            current_pool_virality = np.fromiter(
+                (c.virality for c in current_tick_pool),
+                dtype=np.float64, count=current_pool_size,
+            )
+            current_pool_misinfo = np.fromiter(
+                (c.misinfo_score for c in current_tick_pool),
+                dtype=np.float64, count=current_pool_size,
+            )
+        else:
+            current_pool_ideo = None
+            current_pool_virality = None
+            current_pool_misinfo = None
+
+        shared_arrays: dict[int, tuple[list[Content], np.ndarray | None, np.ndarray | None, np.ndarray | None]] = {}
+        if previous_shared_content:
+            for agent_id, items in previous_shared_content.items():
+                if not items:
+                    continue
+                if not content_based_mode:
+                    shared_arrays[agent_id] = (items, None, None, None)
+                    continue
+                n_items = len(items)
+                shared_arrays[agent_id] = (
+                    items,
+                    np.fromiter(
+                        (c.ideological_score for c in items),
+                        dtype=np.float64, count=n_items,
+                    ),
+                    np.fromiter(
+                        (c.virality for c in items),
+                        dtype=np.float64, count=n_items,
+                    ),
+                    np.fromiter(
+                        (c.misinfo_score for c in items),
+                        dtype=np.float64, count=n_items,
+                    ),
+                )
 
         feeds: dict[int, list[Content]] = {}
         for agent in active_agents:
-            candidate_pool = candidate_pools[agent.id]
-            if not candidate_pool:
+            pool_len = current_pool_size
+            for predecessor_id in predecessor_ids_by_agent[agent.id]:
+                shared_entry = shared_arrays.get(predecessor_id)
+                if shared_entry is not None:
+                    pool_len += len(shared_entry[0])
+
+            if pool_len == 0:
                 feeds[agent.id] = []
                 continue
 
+            candidate_pool = list(current_tick_pool) if current_pool_size else []
+            if content_based_mode:
+                content_ideo_array = np.empty(pool_len, dtype=np.float64)
+                content_virality_array = np.empty(pool_len, dtype=np.float64)
+                content_misinfo_array = np.empty(pool_len, dtype=np.float64)
+                offset = 0
+                if current_pool_size:
+                    content_ideo_array[:current_pool_size] = current_pool_ideo
+                    content_virality_array[:current_pool_size] = current_pool_virality
+                    content_misinfo_array[:current_pool_size] = current_pool_misinfo
+                    offset = current_pool_size
+            else:
+                content_ideo_array = None
+                content_virality_array = None
+                content_misinfo_array = None
+                offset = 0
+
+            for predecessor_id in predecessor_ids_by_agent[agent.id]:
+                shared_entry = shared_arrays.get(predecessor_id)
+                if shared_entry is None:
+                    continue
+                items, shared_ideo, shared_virality, shared_misinfo = shared_entry
+                candidate_pool.extend(items)
+                if content_based_mode:
+                    end = offset + len(items)
+                    content_ideo_array[offset:end] = shared_ideo
+                    content_virality_array[offset:end] = shared_virality
+                    content_misinfo_array[offset:end] = shared_misinfo
+                    offset = end
+
             if recommender_type == "content_based":
-                assert cb_recommender is not None
-                content_ideo_array = np.fromiter(
-                    (c.ideological_score for c in candidate_pool),
-                    dtype=np.float64, count=len(candidate_pool),
-                )
-                content_virality_array = np.fromiter(
-                    (c.virality for c in candidate_pool),
-                    dtype=np.float64, count=len(candidate_pool),
-                )
-                content_misinfo_array = np.fromiter(
-                    (c.misinfo_score for c in candidate_pool),
-                    dtype=np.float64, count=len(candidate_pool),
-                )
+                assert content_ideo_array is not None
+                assert content_virality_array is not None
+                assert content_misinfo_array is not None
                 feeds[agent.id] = generate_feed_vectorized(
                     agent=agent,
                     candidate_pool=candidate_pool,
@@ -617,9 +690,23 @@ def run_simulation(
                     agent, candidate_pool, k_exp,
                 )
             elif recommender_type == "hybrid":
-                assert cb_recommender is not None and cf_recommender is not None
+                assert cf_recommender is not None
+                assert content_ideo_array is not None
+                assert content_virality_array is not None
+                assert content_misinfo_array is not None
                 cf_feed = cf_recommender.generate_feed(agent, candidate_pool, k_exp)
-                cb_feed = cb_recommender.generate_feed(agent, candidate_pool, k_exp)
+                cb_feed = generate_feed_vectorized(
+                    agent=agent,
+                    candidate_pool=candidate_pool,
+                    content_ideo_array=content_ideo_array,
+                    content_virality_array=content_virality_array,
+                    content_misinfo_array=content_misinfo_array,
+                    k_exp=k_exp,
+                    alpha=alpha,
+                    beta_pop=beta_pop,
+                    lambda_penalty=lambda_penalty,
+                    diversity_ratio=diversity_ratio,
+                )
                 # Blend: interleave CF and CB items by blend ratio.
                 n_cf = int(k_exp * cf_blend_ratio)
                 n_cb = k_exp - n_cf
@@ -647,8 +734,9 @@ def run_simulation(
                 feeds[agent.id] = candidate_pool[:k_exp]
 
         # Step 3/4/5: compute per-agent outcomes, then synchronized apply.
-        # For smaller populations, serial execution avoids joblib scheduling overhead.
-        if len(active_agents) < 300:
+        # Serial for N < 5000: thread-pool scheduling overhead dominates for
+        # small-to-medium populations (~0.2s/tick to create/destroy pool).
+        if len(active_agents) < 5000:
             step_results = [
                 _process_agent_tick(
                     agent=agent,
@@ -698,20 +786,53 @@ def run_simulation(
             agent.emotional_arousal = float(new_arousals.get(agent.id, 0.0))
 
         # SIR transitions — multi-claim tracking (Phase 5 Step 5.2).
+        # Pre-compute a structured dtype for per-agent feed filtering.
+        _sir_dtype = np.dtype([
+            ("score", np.float64),
+            ("has_campaign", bool),
+            ("is_satire", bool),
+        ])
         for agent in active_agents:
             feed = consumed_items.get(agent.id, [])
-            if not feed:
+            n_feed = len(feed)
+            if n_feed == 0:
+                continue
+
+            ml = agent.media_literacy
+
+            # Vectorized pre-filter: one generator pass extracts all needed attributes.
+            feed_arr = np.fromiter(
+                (
+                    (c.misinfo_score, c.coordinated_campaign_id is not None, c.is_satire)
+                    for c in feed
+                ),
+                dtype=_sir_dtype,
+                count=n_feed,
+            )
+            candidate_mask = (
+                (feed_arr["score"] > 0.2)
+                | feed_arr["has_campaign"]
+                | (feed_arr["is_satire"] & (ml < 0.4))
+            )
+            candidate_indices = np.where(candidate_mask)[0]
+            if len(candidate_indices) == 0:
                 continue
 
             # Group misinformation by campaign (or content ID for non-campaign).
             misinfo_by_campaign: dict[int, list[Content]] = {}
-            for content in feed:
+            for idx in candidate_indices:
+                content = feed[int(idx)]
+                cid = content.coordinated_campaign_id
+                if feed_arr["score"][idx] <= 0.2:
+                    if cid is None or tick <= campaign_expiry.get(cid, tick + 999999):
+                        if not content.is_satire or ml >= 0.4:
+                            continue
                 effective = get_effective_misinfo_score(
-                    content, tick, campaign_expiry, agent.media_literacy
+                    content, tick, campaign_expiry, ml,
                 )
                 if effective <= 0.5:
                     continue
-                key = content.coordinated_campaign_id or content.id
+                key = cid or content.id
                 misinfo_by_campaign.setdefault(key, []).append(content)
 
             # Per-campaign SIR transitions.
@@ -741,7 +862,7 @@ def run_simulation(
                         agent.sir_states[campaign_id] = "R"
 
         # Step 6: NETWORK REWIRING
-        _network_rewiring_step(
+        graph_changed = _network_rewiring_step(
             G=G,
             agents=agents,
             dynamic_rewire_rate=dynamic_rewire_rate,
@@ -750,51 +871,19 @@ def run_simulation(
             tick=tick,
         )
 
-        # Rebuild cached neighbor structures after potential rewiring.
-        if dynamic_rewire_rate > 0.0:
-            predecessor_ids_by_agent = {
-                a.id: get_predecessors(G, a.id) for a in active_agents if a.id in G
-            }
-            neighbors_by_agent = {
-                a.id: [
-                    G.nodes[node_id]["agent"]
-                    for node_id in predecessor_ids_by_agent.get(a.id, [])
-                ]
-                for a in active_agents if a.id in G
-            }
-            influence_weights_by_agent = {
-                a.id: get_influence_weights(G, a.id) for a in active_agents if a.id in G
-            }
-
         # Step 7: CHURN CHECK
-        _churn_step(
+        if _churn_step(
             G=G,
             agents=agents,
             enable_churn=enable_churn,
             churn_base=churn_base,
             churn_weight=churn_weight,
             seed=base_seed + tick * 1_000_099,
-        )
-
-        # Rebuild cached structures if churn removed any nodes.
-        if enable_churn:
-            # Only cache agents whose nodes still exist in the graph.
-            surviving = [a for a in agents if a.is_active and a.id in G]
-            predecessor_ids_by_agent = {
-                a.id: get_predecessors(G, a.id) for a in surviving
-            }
-            neighbors_by_agent = {
-                a.id: [
-                    G.nodes[node_id]["agent"] for node_id in predecessor_ids_by_agent[a.id]
-                ]
-                for a in surviving
-            }
-            influence_weights_by_agent = {
-                a.id: get_influence_weights(G, a.id) for a in surviving
-            }
+        ):
+            graph_changed = True
 
         # Step 8: BOT DETECTION
-        _bot_detection_step(
+        if _bot_detection_step(
             G=G,
             agents=agents,
             shared_content=shared_content,
@@ -804,15 +893,43 @@ def run_simulation(
             rate_limit_factor=rate_limit_factor,
             tick=tick,
             seed=base_seed,
-        )
+        ):
+            graph_changed = True
+
+        if graph_changed:
+            graph_dirty = True
+            # Only cache agents whose nodes still exist in the graph.
+            surviving = [a for a in agents if a.is_active and a.id in G]
+            _id_to_agent = {a.id: a for a in surviving}
+            predecessor_ids_by_agent = {}
+            neighbors_by_agent = {}
+            influence_weights_by_agent = {}
+            for a in surviving:
+                preds = get_predecessors(G, a.id)
+                predecessor_ids_by_agent[a.id] = preds
+                neighbors_by_agent[a.id] = [_id_to_agent[nid] for nid in preds]
+                if not preds:
+                    influence_weights_by_agent[a.id] = {}
+                else:
+                    raw = {src: float(G[src][a.id].get("weight", 1.0)) for src in preds}
+                    total = sum(raw.values())
+                    if total <= 0.0:
+                        uniform = 1.0 / len(preds)
+                        influence_weights_by_agent[a.id] = {src: uniform for src in preds}
+                    else:
+                        influence_weights_by_agent[a.id] = {src: w / total for src, w in raw.items()}
 
         # Step 9: METRIC LOGGING
         if tick % snapshot_interval == 0:
+            if graph_dirty or cached_modularity is None:
+                cached_modularity = modularity_q(G)
+                graph_dirty = False
             snapshots.append(
                 compute_all_metrics(
                     G, agents, tick=tick,
                     shared_content=shared_content,
                     consumed_items=consumed_items,
+                    modularity_override=cached_modularity,
                 )
             )
 
@@ -907,6 +1024,9 @@ def run_simulation_streaming(
         a.id: get_influence_weights(G, a.id) for a in agents if a.id in G
     }
 
+    graph_dirty = True
+    cached_modularity: float | None = None
+
     for tick in range(total_ticks):
         active_agents = [a for a in agents if a.is_active]
 
@@ -981,10 +1101,16 @@ def run_simulation_streaming(
                 continue
             misinfo_by_campaign: dict[int, list[Content]] = {}
             for content in feed:
+                base_score = float(content.misinfo_score)
+                cid = content.coordinated_campaign_id
+                if base_score <= 0.2:
+                    if (not content.is_satire) or agent.media_literacy >= 0.4:
+                        if cid is None or tick <= campaign_expiry.get(cid, tick + 999999):
+                            continue
                 eff = get_effective_misinfo_score(content, tick, campaign_expiry, agent.media_literacy)
                 if eff <= 0.5:
                     continue
-                key = content.coordinated_campaign_id or content.id
+                key = cid or content.id
                 misinfo_by_campaign.setdefault(key, []).append(content)
             for campaign_id, items in misinfo_by_campaign.items():
                 state = agent.sir_states.get(campaign_id, "S")
@@ -1004,20 +1130,24 @@ def run_simulation_streaming(
                         agent.sir_states[campaign_id] = "R"
 
         # Step 6: rewiring
-        _network_rewiring_step(G, agents, dynamic_rewire_rate, homophily_threshold, base_seed, tick)
-        if dynamic_rewire_rate > 0.0:
-            predecessor_ids_by_agent = {a.id: get_predecessors(G, a.id) for a in active_agents if a.id in G}
-            neighbors_by_agent = {
-                a.id: [G.nodes[nid]["agent"] for nid in predecessor_ids_by_agent.get(a.id, [])]
-                for a in active_agents if a.id in G
-            }
-            influence_weights_by_agent = {
-                a.id: get_influence_weights(G, a.id) for a in active_agents if a.id in G
-            }
+        graph_changed = _network_rewiring_step(
+            G, agents, dynamic_rewire_rate, homophily_threshold, base_seed, tick
+        )
 
         # Step 7: churn
-        _churn_step(G, agents, enable_churn, churn_base, churn_weight, base_seed + tick * 1_000_099)
-        if enable_churn:
+        if _churn_step(
+            G, agents, enable_churn, churn_base, churn_weight, base_seed + tick * 1_000_099
+        ):
+            graph_changed = True
+
+        # Step 8: bot detection
+        if _bot_detection_step(
+            G, agents, shared_content, T_detect, s_thresh, p_detect_remove, rate_limit_factor, tick, base_seed
+        ):
+            graph_changed = True
+
+        if graph_changed:
+            graph_dirty = True
             surviving = [a for a in agents if a.is_active and a.id in G]
             predecessor_ids_by_agent = {a.id: get_predecessors(G, a.id) for a in surviving}
             neighbors_by_agent = {
@@ -1026,9 +1156,6 @@ def run_simulation_streaming(
             }
             influence_weights_by_agent = {a.id: get_influence_weights(G, a.id) for a in surviving}
 
-        # Step 8: bot detection
-        _bot_detection_step(G, agents, shared_content, T_detect, s_thresh, p_detect_remove, rate_limit_factor, tick, base_seed)
-
         # Detect edge changes
         current_edge_set = set(G.edges)
         edges_changed = current_edge_set != previous_edge_set
@@ -1036,9 +1163,13 @@ def run_simulation_streaming(
         previous_edge_set = current_edge_set
 
         # Compute metrics snapshot
+        if graph_dirty or cached_modularity is None:
+            cached_modularity = modularity_q(G)
+            graph_dirty = False
         metrics = compute_all_metrics(
             G, agents, tick=tick,
             shared_content=shared_content, consumed_items=consumed_items,
+            modularity_override=cached_modularity,
         )
 
         # Build agent opinions array (indexed by agent id for frontend)
