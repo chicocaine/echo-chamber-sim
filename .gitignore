@@ -3,5 +3,4 @@ __pycache__
 prompt.md
 *.lprof
 notebooks/
-frontend/
 results/

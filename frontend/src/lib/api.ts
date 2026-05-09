@@ -1,4 +1,4 @@
-import type { SimConfig, SimResult } from './types'
+import type { Preset, SimConfig, SimResult } from './types'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
@@ -40,4 +40,12 @@ export async function getDefaults(): Promise<SimConfig> {
     throw new Error(`Defaults request failed (${response.status})`)
   }
   return (await response.json()) as SimConfig
+}
+
+export async function getPresets(): Promise<Preset[]> {
+  const response = await fetch(`${API_BASE}/presets`)
+  if (!response.ok) {
+    throw new Error(`Presets request failed (${response.status})`)
+  }
+  return (await response.json()) as Preset[]
 }

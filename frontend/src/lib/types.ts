@@ -109,6 +109,13 @@ export interface ConfigSectionDef {
   params: ConfigParamDef[]
 }
 
+export interface Preset {
+  id: string
+  label: string
+  description: string
+  config: SimConfig
+}
+
 export interface ConfigParamDef {
   key: string
   label: string

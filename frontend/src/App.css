@@ -503,6 +503,59 @@ html, body, #root {
   cursor: not-allowed;
 }
 
+/* ---- Preset dropdown ---- */
+.preset-bar {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.preset-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.preset-select {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.preset-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.preset-select option {
+  background: var(--surface);
+  color: var(--text);
+  padding: 6px;
+}
+
+.preset-hint {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  border-left: 3px solid var(--accent);
+}
+
 /* ---- Error ---- */
 .error-banner {
   position: fixed;

@@ -6,8 +6,8 @@ import { OpinionHistogram } from './components/OpinionHistogram'
 import { PlaybackBar } from './components/PlaybackBar'
 import { setTickOpinions } from './components/networkGraphState'
 import { useSimulation } from './hooks/useSimulation'
-import { getDefaults } from './lib/api'
-import type { SimConfig } from './lib/types'
+import { getDefaults, getPresets } from './lib/api'
+import type { Preset, SimConfig } from './lib/types'
 import './App.css'
 
 const FALLBACK_CONFIG: SimConfig = {
@@ -51,6 +51,8 @@ export default function App() {
   const [config, setConfig] = useState<SimConfig>(FALLBACK_CONFIG)
   const [defaultsLoaded, setDefaultsLoaded] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [presets, setPresets] = useState<Preset[]>([])
+  const [activePresetId, setActivePresetId] = useState<string | null>(null)
   const { status, result, errorMessage, run } = useSimulation()
 
   // Playback state
@@ -63,10 +65,16 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false
-    getDefaults().then(
-      defaults => { if (!cancelled) { setConfig(defaults); setDefaultsLoaded(true) } },
-      err => { if (!cancelled) { setLoadError(err instanceof Error ? err.message : 'Unknown'); setDefaultsLoaded(true) } }
-    )
+    Promise.all([
+      getDefaults().then(
+        defaults => { if (!cancelled) { setConfig(defaults); setDefaultsLoaded(true) } },
+        err => { if (!cancelled) { setLoadError(err instanceof Error ? err.message : 'Unknown'); setDefaultsLoaded(true) } }
+      ),
+      getPresets().then(
+        p => { if (!cancelled) setPresets(p) },
+        () => { /* presets are non-critical; ignore fetch errors */ }
+      ),
+    ])
     return () => { cancelled = true }
   }, [])
 
@@ -141,13 +149,21 @@ export default function App() {
     setCurrentTick(0)
   }, [])
 
+  const handlePresetSelect = useCallback((preset: Preset) => {
+    setConfig(preset.config)
+    setActivePresetId(preset.id)
+  }, [])
+
   const canRun = defaultsLoaded && status !== 'running'
 
   return (
     <div className="app-shell">
       <ConfigPanel
         config={config}
+        presets={presets}
+        activePresetId={activePresetId}
         onChange={setConfig}
+        onPresetSelect={handlePresetSelect}
         onRun={handleRun}
         canRun={canRun}
         isRunning={status === 'running'}

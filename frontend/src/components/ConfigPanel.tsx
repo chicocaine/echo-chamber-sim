@@ -1,16 +1,19 @@
 import { useCallback, useState } from 'react'
 import { AGENT_TYPES, CONFIG_SECTIONS } from '../lib/configDefinitions'
-import type { SimConfig } from '../lib/types'
+import type { Preset, SimConfig } from '../lib/types'
 
 interface Props {
   config: SimConfig
+  presets: Preset[]
+  activePresetId: string | null
   onChange: (config: SimConfig) => void
+  onPresetSelect: (preset: Preset) => void
   onRun: () => void
   canRun: boolean
   isRunning: boolean
 }
 
-export function ConfigPanel({ config, onChange, onRun, canRun, isRunning }: Props) {
+export function ConfigPanel({ config, presets, activePresetId, onChange, onPresetSelect, onRun, canRun, isRunning }: Props) {
   const [openSections, setOpenSections] = useState<Set<string>>(
     new Set(['network', 'population', 'simulation', 'recommendation'])
   )
@@ -47,6 +50,36 @@ export function ConfigPanel({ config, onChange, onRun, canRun, isRunning }: Prop
         <h2>Simulation Config</h2>
         <p>Configure parameters and run the echo chamber model</p>
       </div>
+
+      {presets.length > 0 && (
+        <div className="preset-bar">
+          <label className="preset-label" title="Select a preset configuration to quickly explore standout experiment scenarios">
+            Preset
+          </label>
+          <select
+            className="preset-select"
+            value={activePresetId ?? ''}
+            onChange={e => {
+              const preset = presets.find(p => p.id === e.target.value)
+              if (preset) onPresetSelect(preset)
+            }}
+          >
+            <option value="" disabled>
+              Select a preset...
+            </option>
+            {presets.map(preset => (
+              <option key={preset.id} value={preset.id} title={preset.description}>
+                {preset.label}
+              </option>
+            ))}
+          </select>
+          {activePresetId && (
+            <div className="preset-hint">
+              {presets.find(p => p.id === activePresetId)?.description ?? ''}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="sidebar-scroll">
         {CONFIG_SECTIONS.map(section => (
